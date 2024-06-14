@@ -1,5 +1,6 @@
 import { UserPositionList } from "./user-position-list";
 import { LoadingSummary } from "./loading-summary";
+import { NoResultsFound } from "./no-results-found";
 
 import { PositionLoadingState } from "@/pages";
 
@@ -9,6 +10,13 @@ export const ProfitDisplay = (props: {
 }) => {
   if (props.positionLoadingState.startTime == 0) {
     return <></>;
+  }
+
+  if (
+    props.positionLoadingState.done &&
+    props.positionLoadingState.userProfit.pair_groups.length == 0
+  ) {
+    return <NoResultsFound />;
   }
 
   return (
