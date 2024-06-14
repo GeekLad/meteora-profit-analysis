@@ -687,6 +687,7 @@ export async function getMeteoraProfitForAccountOrSignature(
   }
 
   function _checkCompletionCallbacks() {
+    _updateClosedPositions();
     if (
       allSignaturesFound &&
       signaturesChecked == allSignatures.length &&
@@ -699,20 +700,21 @@ export async function getMeteoraProfitForAccountOrSignature(
       signaturesChecked == allSignatures.length &&
       positionsAnalyzed == allPositionAddresses.length
     ) {
-      // Set closed statuses
-      allProfits.forEach((profit) => {
-        profit.is_closed = closedPositionAddresses.includes(
-          profit.position.address,
-        );
-        if (profit.is_closed && profit.withdraws_count == 0) {
-          profit.errors.push("Closed position missing withdraws");
-        }
-      });
-
       if (callbacks?.onDone) {
         callbacks.onDone();
       }
     }
+  }
+
+  function _updateClosedPositions() {
+    allProfits.forEach((profit) => {
+      profit.is_closed = closedPositionAddresses.includes(
+        profit.position.address,
+      );
+      if (profit.is_closed && profit.withdraws_count == 0) {
+        profit.errors.push("Closed position missing withdraws");
+      }
+    });
   }
 
   return allProfits;
@@ -737,10 +739,10 @@ function getMeteoraPositionGroups(
     const positionsWithErrors = pairPositions.filter(
       (position) => position.errors.length > 0,
     );
-    const closedPositions = positionsWithErrors.filter(
+    const closedPositions = positionsWithoutErrors.filter(
       (position) => position.is_closed == true,
     );
-    const openPositions = positionsWithErrors.filter(
+    const openPositions = positionsWithoutErrors.filter(
       (position) => !position.is_closed,
     );
 
