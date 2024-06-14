@@ -31,11 +31,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: ${{ steps.detect-package-manager.outputs.manager }}
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
@@ -58,6 +53,7 @@ jobs:
         uses: oven-sh/setup-bun@v1
         run: bun install
       - name: Build with Next.js
+        uses: oven-sh/setup-bun@v1
         run: bun run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
