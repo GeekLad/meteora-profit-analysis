@@ -51,10 +51,10 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
       - name: Install dependencies
         uses: oven-sh/setup-bun@v1
-        run: bun install
+      - run: bun install
       - name: Build with Next.js
         uses: oven-sh/setup-bun@v1
-        run: bun run build
+      - run: bun run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
