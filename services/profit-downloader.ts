@@ -395,7 +395,8 @@ function getBalanceSummary(
           .reduce((total, current) => total + current);
 
   const total_time_days = total_time / (1000 * 60 * 60 * 24);
-  const average_balance = balance_time_sum_product / total_time;
+  const average_balance =
+    total_time == 0 ? 0 : balance_time_sum_product / total_time;
   const balance_points = average_balance * total_time_days;
   const fee_points = 1000 * (claimed_fees_usd + unclaimed_fees_usd);
   const reward_points = 1000 * (claimed_rewards_usd + unclaimed_rewards_usd);
@@ -752,14 +753,14 @@ function getMeteoraPositionGroups(
     pairs.push({
       name: pairPositions[0].pair_name,
       pair_address: pairPositions[0].position.pair_address,
-      position_count: pairPositions.length,
+      position_count: closedPositions.length,
       positions: closedPositions,
       openPositions: openPositions,
       positionsWithErrors,
-      deposit_count: total(positionsWithoutErrors, "deposit_count"),
-      deposits_usd: total(positionsWithoutErrors, "deposits_usd"),
-      withdraws_count: total(positionsWithoutErrors, "withdraws_count"),
-      withdraws_usd: total(positionsWithoutErrors, "withdraws_usd"),
+      deposit_count: total(closedPositions, "deposit_count"),
+      deposits_usd: total(closedPositions, "deposits_usd"),
+      withdraws_count: total(closedPositions, "withdraws_count"),
+      withdraws_usd: total(closedPositions, "withdraws_usd"),
       claimed_fees_usd: total(pairPositions, "claimed_fees_usd"),
       claimed_rewards_usd: total(pairPositions, "claimed_rewards_usd"),
       most_recent_deposit_withdraw: max(
@@ -768,19 +769,17 @@ function getMeteoraPositionGroups(
       ),
       balance_time_sum_product,
       total_time,
-      total_time_days: total(positionsWithoutErrors, "total_time_days"),
-      average_balance: balance_time_sum_product / total_time,
-      current_usd: total(positionsWithoutErrors, "current_usd"),
-      unclaimed_fees_usd: total(positionsWithoutErrors, "unclaimed_fees_usd"),
-      unclaimed_rewards_usd: total(
-        positionsWithoutErrors,
-        "unclaimed_rewards_usd",
-      ),
-      position_profit: total(positionsWithoutErrors, "position_profit"),
-      total_profit: total(positionsWithoutErrors, "total_profit"),
+      total_time_days: total(closedPositions, "total_time_days"),
+      average_balance:
+        total_time == 0 ? 0 : balance_time_sum_product / total_time,
+      current_usd: total(closedPositions, "current_usd"),
+      unclaimed_fees_usd: total(closedPositions, "unclaimed_fees_usd"),
+      unclaimed_rewards_usd: total(closedPositions, "unclaimed_rewards_usd"),
+      position_profit: total(closedPositions, "position_profit"),
+      total_profit: total(closedPositions, "total_profit"),
       fee_points: total(pairPositions, "fee_points"),
       reward_points: total(pairPositions, "reward_points"),
-      balance_points: total(positionsWithoutErrors, "balance_points"),
+      balance_points: total(closedPositions, "balance_points"),
       total_points: total(pairPositions, "total_points"),
     });
   });
@@ -825,7 +824,8 @@ export function getMeteoraPairGroups(
       balance_time_sum_product,
       total_time,
       total_time_days: total(pairIdRollups, "total_time_days"),
-      average_balance: balance_time_sum_product / total_time,
+      average_balance:
+        total_time == 0 ? 0 : balance_time_sum_product / total_time,
       current_usd: total(pairIdRollups, "current_usd"),
       unclaimed_fees_usd: total(pairIdRollups, "unclaimed_fees_usd"),
       unclaimed_rewards_usd: total(pairIdRollups, "unclaimed_rewards_usd"),
@@ -870,7 +870,7 @@ export function getMeteoraUserProfit(
     balance_time_sum_product,
     total_time,
     total_time_days: total(pair_groups, "total_time_days"),
-    average_balance: balance_time_sum_product / total_time,
+    average_balance: total_time ? 0 : balance_time_sum_product / total_time,
     current_usd: total(pair_groups, "current_usd"),
     unclaimed_fees_usd: total(pair_groups, "unclaimed_fees_usd"),
     unclaimed_rewards_usd: total(pair_groups, "unclaimed_rewards_usd"),

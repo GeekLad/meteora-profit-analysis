@@ -65,8 +65,10 @@ export const UserPositionList = (props: {
     claimed_rewards_usd:
       props.positionLoadingState.userProfit.claimed_rewards_usd,
     average_balance:
-      props.positionLoadingState.userProfit.balance_time_sum_product /
-      props.positionLoadingState.userProfit.total_time,
+      props.positionLoadingState.userProfit.total_time == 0
+        ? 0
+        : props.positionLoadingState.userProfit.balance_time_sum_product /
+          props.positionLoadingState.userProfit.total_time,
     total_profit: props.positionLoadingState.userProfit.total_profit,
   };
 
@@ -86,16 +88,20 @@ export const UserPositionList = (props: {
                   b.claimed_rewards_usd;
 
           case "avg_balance_profit_percent":
-            const a_percent = a.total_profit / a.average_balance;
-            const b_percent = b.total_profit / b.average_balance;
+            const a_percent =
+              a.average_balance == 0 ? 0 : a.total_profit / a.average_balance;
+            const b_percent =
+              b.average_balance == 0 ? 0 : b.total_profit / b.average_balance;
 
             return sortDescriptor.direction == "descending"
               ? b_percent - a_percent
               : a_percent - b_percent;
 
           case "deposits_profit_percent":
-            const a_dpercent = a.total_profit / a.deposits_usd;
-            const b_dpercent = b.total_profit / b.deposits_usd;
+            const a_dpercent =
+              a.deposits_usd == 0 ? 0 : a.total_profit / a.deposits_usd;
+            const b_dpercent =
+              b.deposits_usd == 0 ? 0 : b.total_profit / b.deposits_usd;
 
             return sortDescriptor.direction == "descending"
               ? b_dpercent - a_dpercent
@@ -226,8 +232,9 @@ export const UserPositionList = (props: {
                 })}
               </TableCell>
               <TableCell className={formatTotalRow(pairGroup)}>
-                {(
-                  pairGroup.total_profit / pairGroup.average_balance
+                {(pairGroup.average_balance == 0
+                  ? 0
+                  : pairGroup.total_profit / pairGroup.average_balance
                 ).toLocaleString("en-US", {
                   style: "percent",
                   minimumFractionDigits: 2,
@@ -235,8 +242,9 @@ export const UserPositionList = (props: {
                 })}
               </TableCell>
               <TableCell className={formatTotalRow(pairGroup, "last")}>
-                {(
-                  pairGroup.total_profit / pairGroup.deposits_usd
+                {(pairGroup.deposits_usd == 0
+                  ? 0
+                  : pairGroup.total_profit / pairGroup.deposits_usd
                 ).toLocaleString("en-US", {
                   style: "percent",
                   minimumFractionDigits: 2,
