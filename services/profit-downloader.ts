@@ -751,6 +751,10 @@ function getMeteoraPositionGroups(
       "balance_time_sum_product",
     );
     const total_time = total(positionsWithoutErrors, "total_time");
+    const fee_points = total(pairPositions, "fee_points");
+    const reward_points = total(pairPositions, "reward_points");
+    const balance_points = total(closedPositions, "balance_points");
+    const total_points = fee_points + reward_points + balance_points;
 
     pairs.push({
       name: pairPositions[0].pair_name,
@@ -779,10 +783,10 @@ function getMeteoraPositionGroups(
       unclaimed_rewards_usd: total(closedPositions, "unclaimed_rewards_usd"),
       position_profit: total(closedPositions, "position_profit"),
       total_profit: total(closedPositions, "total_profit"),
-      fee_points: total(pairPositions, "fee_points"),
-      reward_points: total(pairPositions, "reward_points"),
-      balance_points: total(closedPositions, "balance_points"),
-      total_points: total(pairPositions, "total_points"),
+      fee_points,
+      reward_points,
+      balance_points,
+      total_points,
     });
   });
 
