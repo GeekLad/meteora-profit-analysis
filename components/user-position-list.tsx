@@ -223,7 +223,7 @@ export const UserPositionList = (props: {
               </TableCell>
               <TableCell
                 className={formatTotalRow({
-                  additional: "hidden lg:table-cell",
+                  additional: "hidden lg:table-cell text-right",
                   pairGroup,
                 })}
               >
@@ -231,14 +231,17 @@ export const UserPositionList = (props: {
               </TableCell>
               <TableCell
                 className={formatTotalRow({
-                  additional: "hidden lg:table-cell",
+                  additional: "hidden lg:table-cell text-right",
                   pairGroup,
                 })}
               >
                 {pairGroup.position_count.toLocaleString("en-US")}
               </TableCell>
               <TableCell
-                className={formatTotalRow({ additional: "", pairGroup })}
+                className={formatTotalRow({
+                  additional: "text-right",
+                  pairGroup,
+                })}
               >
                 {(
                   pairGroup.claimed_fees_usd + pairGroup.claimed_rewards_usd
@@ -251,7 +254,7 @@ export const UserPositionList = (props: {
               </TableCell>
               <TableCell
                 className={formatTotalRow({
-                  additional: "hidden lg:table-cell",
+                  additional: "hidden lg:table-cell text-right",
                   pairGroup,
                 })}
               >
@@ -264,7 +267,7 @@ export const UserPositionList = (props: {
               </TableCell>
               <TableCell
                 className={formatTotalRow({
-                  additional: "hidden lg:table-cell",
+                  additional: "hidden lg:table-cell text-right",
                   pairGroup,
                 })}
               >
@@ -277,7 +280,7 @@ export const UserPositionList = (props: {
               </TableCell>
               <TableCell
                 className={formatTotalRow({
-                  additional: "rounded-r-lg lg:rounded-r-none",
+                  additional: "rounded-r-lg lg:rounded-r-none text-right",
                   pairGroup,
                 })}
               >
@@ -290,7 +293,7 @@ export const UserPositionList = (props: {
               </TableCell>
               <TableCell
                 className={formatTotalRow({
-                  additional: "hidden lg:table-cell",
+                  additional: "hidden lg:table-cell text-right",
                   pairGroup,
                 })}
               >
@@ -303,7 +306,7 @@ export const UserPositionList = (props: {
               </TableCell>
               <TableCell
                 className={formatTotalRow({
-                  additional: "hidden lg:table-cell",
+                  additional: "hidden lg:table-cell text-right",
                   pairGroup,
                 })}
               >
@@ -318,7 +321,7 @@ export const UserPositionList = (props: {
               </TableCell>
               <TableCell
                 className={formatTotalRow({
-                  additional: "hidden lg:table-cell",
+                  additional: "hidden lg:table-cell text-right",
                   pairGroup,
                   firstLast: "last",
                 })}
