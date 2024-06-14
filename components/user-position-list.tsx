@@ -27,17 +27,21 @@ interface DataColumns {
   average_balance: number;
 }
 
-function formatTotalRow(
-  currentRow: MeteoraPairGroup | DataColumns,
-  firstLast?: "first" | "last",
-) {
-  return currentRow.name.group_name != "Total"
-    ? ""
-    : !firstLast
-      ? "font-bold text-lg bg-slate-500 text-white"
-      : firstLast == "first"
-        ? "font-bold text-lg bg-slate-500 text-white rounded-l-lg"
-        : "font-bold text-lg bg-slate-500 text-white rounded-r-lg";
+function formatTotalRow(config: {
+  pairGroup: MeteoraPairGroup | DataColumns;
+  additional?: string;
+  firstLast?: "first" | "last";
+}) {
+  return (
+    (config.additional ? config.additional + " " : "") +
+    (config.pairGroup.name.group_name != "Total"
+      ? ""
+      : !config.firstLast
+        ? "font-bold text-lg bg-slate-500 text-white"
+        : config.firstLast == "first"
+          ? "font-bold text-lg bg-slate-500 text-white rounded-l-lg"
+          : "font-bold text-lg bg-slate-500 text-white rounded-r-lg")
+  );
 }
 
 export const UserPositionList = (props: {
@@ -140,11 +144,19 @@ export const UserPositionList = (props: {
           <TableColumn key="name" allowsSorting>
             Pair
           </TableColumn>
-          <TableColumn key="pair_count" allowsSorting>
+          <TableColumn
+            key="pair_count"
+            allowsSorting
+            className="hidden lg:table-cell"
+          >
             # of <br />
             Markets
           </TableColumn>
-          <TableColumn key="position_count" allowsSorting>
+          <TableColumn
+            key="position_count"
+            allowsSorting
+            className="hidden lg:table-cell"
+          >
             # of <br />
             Positions
           </TableColumn>
@@ -152,27 +164,51 @@ export const UserPositionList = (props: {
             Fees & <br />
             Rewards
           </TableColumn>
-          <TableColumn key="deposits_usd" allowsSorting>
+          <TableColumn
+            key="deposits_usd"
+            allowsSorting
+            className="hidden lg:table-cell"
+          >
             Total <br />
             Deposits
           </TableColumn>
-          <TableColumn key="withdraws_usd" allowsSorting>
+          <TableColumn
+            key="withdraws_usd"
+            allowsSorting
+            className="hidden lg:table-cell"
+          >
             Total <br />
             Withdrawals
           </TableColumn>
-          <TableColumn key="total_profit" allowsSorting>
+          <TableColumn
+            key="total_profit"
+            allowsSorting
+            className="rounded-r-lg lg:rounded-r-none"
+          >
             Total <br />
             Profit
           </TableColumn>
-          <TableColumn key="average_balance" allowsSorting>
+          <TableColumn
+            key="average_balance"
+            allowsSorting
+            className="hidden lg:table-cell"
+          >
             Average <br />
             Balance
           </TableColumn>
-          <TableColumn key="avg_balance_profit_percent" allowsSorting>
+          <TableColumn
+            key="avg_balance_profit_percent"
+            allowsSorting
+            className="hidden lg:table-cell"
+          >
             Average Balance <br />
             Profit %
           </TableColumn>
-          <TableColumn key="deposits_profit_percent" allowsSorting>
+          <TableColumn
+            key="deposits_profit_percent"
+            allowsSorting
+            className="hidden lg:table-cell"
+          >
             Deposits <br />
             Profit %
           </TableColumn>
@@ -180,16 +216,30 @@ export const UserPositionList = (props: {
         <TableBody items={[...sortGroups(sortDescriptor), totalData]}>
           {(pairGroup) => (
             <TableRow key={pairGroup.name.group_id}>
-              <TableCell className={formatTotalRow(pairGroup, "first")}>
+              <TableCell
+                className={formatTotalRow({ pairGroup, firstLast: "first" })}
+              >
                 {pairGroup.name.group_name}
               </TableCell>
-              <TableCell className={formatTotalRow(pairGroup)}>
+              <TableCell
+                className={formatTotalRow({
+                  additional: "hidden lg:table-cell",
+                  pairGroup,
+                })}
+              >
                 {pairGroup.pair_count.toLocaleString("en-US")}
               </TableCell>
-              <TableCell className={formatTotalRow(pairGroup)}>
+              <TableCell
+                className={formatTotalRow({
+                  additional: "hidden lg:table-cell",
+                  pairGroup,
+                })}
+              >
                 {pairGroup.position_count.toLocaleString("en-US")}
               </TableCell>
-              <TableCell className={formatTotalRow(pairGroup)}>
+              <TableCell
+                className={formatTotalRow({ additional: "", pairGroup })}
+              >
                 {(
                   pairGroup.claimed_fees_usd + pairGroup.claimed_rewards_usd
                 ).toLocaleString("en-US", {
@@ -199,7 +249,12 @@ export const UserPositionList = (props: {
                   maximumFractionDigits: 2,
                 })}
               </TableCell>
-              <TableCell className={formatTotalRow(pairGroup)}>
+              <TableCell
+                className={formatTotalRow({
+                  additional: "hidden lg:table-cell",
+                  pairGroup,
+                })}
+              >
                 {pairGroup.deposits_usd.toLocaleString("en-US", {
                   style: "currency",
                   currency: "USD",
@@ -207,7 +262,12 @@ export const UserPositionList = (props: {
                   maximumFractionDigits: 2,
                 })}
               </TableCell>
-              <TableCell className={formatTotalRow(pairGroup)}>
+              <TableCell
+                className={formatTotalRow({
+                  additional: "hidden lg:table-cell",
+                  pairGroup,
+                })}
+              >
                 {pairGroup.withdraws_usd.toLocaleString("en-US", {
                   style: "currency",
                   currency: "USD",
@@ -215,7 +275,12 @@ export const UserPositionList = (props: {
                   maximumFractionDigits: 2,
                 })}
               </TableCell>
-              <TableCell className={formatTotalRow(pairGroup)}>
+              <TableCell
+                className={formatTotalRow({
+                  additional: "rounded-r-lg lg:rounded-r-none",
+                  pairGroup,
+                })}
+              >
                 {pairGroup.total_profit.toLocaleString("en-US", {
                   style: "currency",
                   currency: "USD",
@@ -223,7 +288,12 @@ export const UserPositionList = (props: {
                   maximumFractionDigits: 2,
                 })}
               </TableCell>
-              <TableCell className={formatTotalRow(pairGroup)}>
+              <TableCell
+                className={formatTotalRow({
+                  additional: "hidden lg:table-cell",
+                  pairGroup,
+                })}
+              >
                 {pairGroup.average_balance.toLocaleString("en-US", {
                   style: "currency",
                   currency: "USD",
@@ -231,7 +301,12 @@ export const UserPositionList = (props: {
                   maximumFractionDigits: 2,
                 })}
               </TableCell>
-              <TableCell className={formatTotalRow(pairGroup)}>
+              <TableCell
+                className={formatTotalRow({
+                  additional: "hidden lg:table-cell",
+                  pairGroup,
+                })}
+              >
                 {(pairGroup.average_balance == 0
                   ? 0
                   : pairGroup.total_profit / pairGroup.average_balance
@@ -241,7 +316,13 @@ export const UserPositionList = (props: {
                   maximumFractionDigits: 2,
                 })}
               </TableCell>
-              <TableCell className={formatTotalRow(pairGroup, "last")}>
+              <TableCell
+                className={formatTotalRow({
+                  additional: "hidden lg:table-cell",
+                  pairGroup,
+                  firstLast: "last",
+                })}
+              >
                 {(pairGroup.deposits_usd == 0
                   ? 0
                   : pairGroup.total_profit / pairGroup.deposits_usd
