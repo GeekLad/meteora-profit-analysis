@@ -117,6 +117,7 @@ interface MeteoraPositionGroup
   name: MeteoraPairGroupName;
   pair_address: string;
   positions: MeteoraPositionProfit[];
+  openPositions: MeteoraPositionProfit[];
   positionsWithErrors: MeteoraPositionProfit[];
   position_count: number;
 }
@@ -735,6 +736,12 @@ function getMeteoraPositionGroups(
     const positionsWithErrors = pairPositions.filter(
       (position) => position.errors.length > 0,
     );
+    const closedPositions = positionsWithErrors.filter(
+      (position) => position.is_closed == true,
+    );
+    const openPositions = positionsWithErrors.filter(
+      (position) => !position.is_closed,
+    );
 
     const balance_time_sum_product = total(
       positionsWithoutErrors,
@@ -746,7 +753,8 @@ function getMeteoraPositionGroups(
       name: pairPositions[0].pair_name,
       pair_address: pairPositions[0].position.pair_address,
       position_count: pairPositions.length,
-      positions: positionsWithoutErrors,
+      positions: closedPositions,
+      openPositions: openPositions,
       positionsWithErrors,
       deposit_count: total(positionsWithoutErrors, "deposit_count"),
       deposits_usd: total(positionsWithoutErrors, "deposits_usd"),
