@@ -4,6 +4,7 @@ import { LoadingItem } from "./loading-status-item";
 import { MissingTransactionsDownloadButton } from "./missing-transactions-download-button";
 import { AllPositionsDownloadButton } from "./all-positions-download-button";
 import { ValidPositionsDownloadButton } from "./valid-positions-download-button";
+import { MetricCard } from "./metric-card";
 
 import { PositionLoadingState } from "@/pages";
 
@@ -12,8 +13,8 @@ export const LoadingSummary = (props: {
   positionLoadingState: PositionLoadingState;
 }) => {
   return (
-    <div className="flex w-full">
-      <Card className="m-4 h-fit w-1/2">
+    <div className="flex w-auto">
+      <Card className="m-4 w-1/2">
         <CardBody>
           <LoadingItem
             title="Time Elapsed"
@@ -65,17 +66,36 @@ export const LoadingSummary = (props: {
           )}
         </CardBody>
       </Card>
-      <div className="flex w-full justify-end items-end">
-        <MissingTransactionsDownloadButton
-          positionAddresses={props.positionLoadingState.positionAddresses}
-          profits={props.positionLoadingState.profits}
-        />
-        <ValidPositionsDownloadButton
-          profits={props.positionLoadingState.profits}
-        />
-        <AllPositionsDownloadButton
-          profits={props.positionLoadingState.profits}
-        />
+      <div className="w-2/3 h-full">
+        <div className="flex">
+          <MetricCard
+            label={"Fee Points"}
+            value={
+              props.positionLoadingState.userProfit.fee_points +
+              props.positionLoadingState.userProfit.reward_points
+            }
+          />
+          <MetricCard
+            label={"Balance Points"}
+            value={props.positionLoadingState.userProfit.balance_points}
+          />
+          <MetricCard
+            label={"Total Points"}
+            value={props.positionLoadingState.userProfit.total_points}
+          />
+        </div>
+        <div className="flex justify-end items-end">
+          <MissingTransactionsDownloadButton
+            positionAddresses={props.positionLoadingState.positionAddresses}
+            profits={props.positionLoadingState.profits}
+          />
+          <ValidPositionsDownloadButton
+            profits={props.positionLoadingState.profits}
+          />
+          <AllPositionsDownloadButton
+            profits={props.positionLoadingState.profits}
+          />
+        </div>
       </div>
     </div>
   );
