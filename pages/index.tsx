@@ -138,84 +138,92 @@ export default function IndexPage() {
       setPositionLoadingState(() => {
         return { ...defaultState, startTime: new Date().getTime() };
       });
-      getMeteoraProfitForAccountOrSignature(
-        appState.connection,
-        walletAddress,
-        {
-          onSignaturesFound(signatureCount) {
-            setPositionLoadingState((previousState) => {
-              return updatePositionLoadingState({
-                ...previousState,
-                signatureCount,
+      try {
+        getMeteoraProfitForAccountOrSignature(
+          appState.connection,
+          walletAddress,
+          {
+            onSignaturesFound(signatureCount) {
+              setPositionLoadingState((previousState) => {
+                return updatePositionLoadingState({
+                  ...previousState,
+                  signatureCount,
+                });
               });
-            });
-          },
-          onAllSignaturesFound() {
-            setPositionLoadingState((previousState) => {
-              return updatePositionLoadingState({
-                ...previousState,
-                allSignaturesFound: true,
+            },
+            onAllSignaturesFound() {
+              setPositionLoadingState((previousState) => {
+                return updatePositionLoadingState({
+                  ...previousState,
+                  allSignaturesFound: true,
+                });
               });
-            });
-          },
-          onPositionFound(positionAddress) {
-            setPositionLoadingState((previousState) => {
-              if (!previousState.positionAddresses.includes(positionAddress)) {
-                previousState.positionAddresses.push(positionAddress);
+            },
+            onPositionFound(positionAddress) {
+              setPositionLoadingState((previousState) => {
+                if (
+                  !previousState.positionAddresses.includes(positionAddress)
+                ) {
+                  previousState.positionAddresses.push(positionAddress);
 
-                return updatePositionLoadingState(previousState);
-              }
+                  return updatePositionLoadingState(previousState);
+                }
 
-              return previousState;
-            });
-          },
-          onClosedPositionFound(positionAddress) {
-            setPositionLoadingState((previousState) => {
-              if (
-                !previousState.closedPositionAddresses.includes(positionAddress)
-              ) {
-                previousState.closedPositionAddresses.push(positionAddress);
-
-                return updatePositionLoadingState(previousState);
-              }
-
-              return previousState;
-            });
-          },
-          onAllPositionsFound() {
-            setPositionLoadingState((previousState) => {
-              return updatePositionLoadingState({
-                ...previousState,
-                allPositionsFound: true,
+                return previousState;
               });
-            });
-          },
-          onProfitAnalyzed(addressCheckCount, profit) {
-            setPositionLoadingState((previousState) => {
-              const profits = profitSort([...previousState.profits, profit]);
-              const userProfit = getMeteoraUserProfit(profits);
+            },
+            onClosedPositionFound(positionAddress) {
+              setPositionLoadingState((previousState) => {
+                if (
+                  !previousState.closedPositionAddresses.includes(
+                    positionAddress,
+                  )
+                ) {
+                  previousState.closedPositionAddresses.push(positionAddress);
 
-              userProfit.pair_groups = profitSort(userProfit.pair_groups);
+                  return updatePositionLoadingState(previousState);
+                }
 
-              return updatePositionLoadingState({
-                ...previousState,
-                addressCheckCount,
-                profits,
-                userProfit,
+                return previousState;
               });
-            });
+            },
+            onAllPositionsFound() {
+              setPositionLoadingState((previousState) => {
+                return updatePositionLoadingState({
+                  ...previousState,
+                  allPositionsFound: true,
+                });
+              });
+            },
+            onProfitAnalyzed(addressCheckCount, profit) {
+              setPositionLoadingState((previousState) => {
+                const profits = profitSort([...previousState.profits, profit]);
+                const userProfit = getMeteoraUserProfit(profits);
+
+                userProfit.pair_groups = profitSort(userProfit.pair_groups);
+
+                return updatePositionLoadingState({
+                  ...previousState,
+                  addressCheckCount,
+                  profits,
+                  userProfit,
+                });
+              });
+            },
+            onDone() {
+              setLoading(false);
+              setPositionLoadingState((previousState) => {
+                return {
+                  ...previousState,
+                  done: true,
+                };
+              });
+            },
           },
-          onDone() {
-            setLoading(false);
-            setPositionLoadingState((previousState) => {
-              return {
-                ...previousState,
-                done: true,
-              };
-            });
-          },
-        },
-      );
+        );
+      } catch (err) {
+        setPositionLoadingState(defaultState);
+      }
     }
   }
 

@@ -68,28 +68,36 @@ export async function getAllSignaturesForAddress(
   onSignaturesFound?: (signatures: ConfirmedSignatureInfo[]) => any,
   onDone?: () => any,
 ): Promise<ConfirmedSignatureInfo[]> {
-  const pubKey = new PublicKey(address);
-  let before: string | undefined = undefined;
-  let newSignatures: ConfirmedSignatureInfo[] = [];
-  const allSignatures: ConfirmedSignatureInfo[] = [];
+  try {
+    const pubKey = new PublicKey(address);
+    let before: string | undefined = undefined;
+    let newSignatures: ConfirmedSignatureInfo[] = [];
+    const allSignatures: ConfirmedSignatureInfo[] = [];
 
-  do {
-    before =
-      newSignatures.length > 0
-        ? newSignatures[newSignatures.length - 1].signature
-        : undefined;
-    newSignatures = await getSignaturesForAddress(connection, pubKey, before);
-    allSignatures.push(...newSignatures);
+    do {
+      before =
+        newSignatures.length > 0
+          ? newSignatures[newSignatures.length - 1].signature
+          : undefined;
+      newSignatures = await getSignaturesForAddress(connection, pubKey, before);
+      allSignatures.push(...newSignatures);
 
-    if (onSignaturesFound) {
-      onSignaturesFound(newSignatures);
+      if (onSignaturesFound) {
+        onSignaturesFound(newSignatures);
+      }
+    } while (newSignatures.length != 0);
+    if (onDone) {
+      onDone();
     }
-  } while (newSignatures.length != 0);
-  if (onDone) {
-    onDone();
-  }
 
-  return allSignatures;
+    return allSignatures;
+  } catch (err) {
+    if (onDone) {
+      onDone();
+    }
+
+    return [];
+  }
 }
 
 export const getParsedTransactions: (
@@ -126,22 +134,29 @@ export const getPositionAddressesFromSignature = THROTTLE_RPC(
         programId: METEORA_PROGRAM_ID,
       },
     ]);
-    const tx = await parser.parseTransaction(connection, txSignature, false);
 
-    if (tx == undefined) {
+    try {
+      const tx = await parser.parseTransaction(connection, txSignature, false);
+
+      if (tx == undefined) {
+        return [];
+      }
+      const accounts = tx.map((data) => data.accounts).flat();
+      const positions = accounts.filter(
+        (account) => account.name == "position",
+      );
+
+      if (!positions) {
+        return [];
+      }
+
+      const postiionAddresses = positions.map((position) =>
+        position.pubkey.toBase58(),
+      );
+
+      return Array.from(new Set(postiionAddresses));
+    } catch (err) {
       return [];
     }
-    const accounts = tx.map((data) => data.accounts).flat();
-    const positions = accounts.filter((account) => account.name == "position");
-
-    if (!positions) {
-      return [];
-    }
-
-    const postiionAddresses = positions.map((position) =>
-      position.pubkey.toBase58(),
-    );
-
-    return Array.from(new Set(postiionAddresses));
   },
 );
