@@ -13,8 +13,8 @@ export const LoadingSummary = (props: {
   positionLoadingState: PositionLoadingState;
 }) => {
   return (
-    <div className="flex w-auto">
-      <Card className="m-4 w-1/2">
+    <div className="md:flex w-auto">
+      <Card className="md:m-4 md:w-1/2 sm:w-full">
         <CardBody>
           <LoadingItem
             title="Time Elapsed"
@@ -67,7 +67,7 @@ export const LoadingSummary = (props: {
         </CardBody>
       </Card>
       <div className="w-2/3 h-full">
-        <div className="flex">
+        <div className="md:flex">
           <MetricCard
             label={"Fee Points"}
             value={
@@ -84,7 +84,7 @@ export const LoadingSummary = (props: {
             value={props.positionLoadingState.userProfit.total_points}
           />
         </div>
-        <div className="flex justify-end items-end">
+        <div className="md:flex justify-end items-end">
           <MissingTransactionsDownloadButton
             positionAddresses={props.positionLoadingState.positionAddresses}
             profits={props.positionLoadingState.profits}

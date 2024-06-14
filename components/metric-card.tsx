@@ -4,7 +4,7 @@ export const MetricCard = (props: { value: number; label: string }) => {
   return (
     <Card className="m-4 w-auto h-fit">
       <CardBody>
-        <div className="text-3xl font-bold">
+        <div className="md:text-xl lg:text-3xl font-bold">
           {props.value.toLocaleString("en-US", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,

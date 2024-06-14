@@ -14,7 +14,7 @@ export const WalletForm = (props: {
   }
 
   return (
-    <div className="flex w-1/2 flex-col gap-4">
+    <div className="flex sm:w-full md:w-1/2 flex-col gap-4">
       <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4">
         <Input
           disabled={props.loading}
