@@ -55,18 +55,16 @@ export const getJupiterTokenList = cachedRequest(
   },
 );
 
-export async function lamportsToDecimal(
+export async function getDecimals(
   connection: Connection,
   address: string,
-  lamports: number,
 ): Promise<number> {
   const tokenMap = await getJupiterTokenList(fetch, "all");
   const jupiterToken = tokenMap.get(address);
 
   if (jupiterToken) {
-    return lamports / 10 ** jupiterToken.decimals;
+    return jupiterToken.decimals;
   }
-
   const accountInfo = await getParsedAccountInfo(connection, address);
 
   if (
@@ -76,7 +74,17 @@ export async function lamportsToDecimal(
     throw new Error(`${address} is not a valid token address!`);
   }
 
-  return lamports / 10 ** accountInfo.value.data.parsed.decimals;
+  return accountInfo.value.data.parsed.decimals as number;
+}
+
+export async function lamportsToDecimal(
+  connection: Connection,
+  address: string,
+  lamports: number,
+): Promise<number> {
+  const decimals = await getDecimals(connection, address);
+
+  return lamports / 10 ** decimals;
 }
 
 export async function lamportsToUsd(
@@ -84,10 +92,12 @@ export async function lamportsToUsd(
   address: string,
   lamports: number,
 ): Promise<number> {
-  const [decimals, price] = await Promise.all([
-    lamportsToDecimal(connection, address, lamports),
-    getPrice(address),
-  ]);
+  const decimals =
+    // Special case for DED
+    address == "7raHqUrZXAqtxFJ2wcmtpH7SQYLeN9447vD4KhZM7tcP"
+      ? 6
+      : await getDecimals(connection, address);
+  const price = await getPrice(address, decimals);
 
-  return decimals * price.price;
+  return (lamports / 10 ** decimals) * price.price;
 }

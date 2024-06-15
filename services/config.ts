@@ -10,6 +10,7 @@ export const DEX_SCRENER_API_URL =
 export const JUPITER_TOKEN_STRICT_LIST_API = "https://token.jup.ag/strict";
 export const JUPITER_TOKEN_ALL_LIST_API = "https://token.jup.ag/all";
 export const JUPITER_PRICE_API = "https://price.jup.ag/v6/price?ids=";
+export const JUPITER_SWAP_API = "https://quote-api.jup.ag/v6";
 export const BLUE_CHIPS = [
   "USDC",
   "SOL",

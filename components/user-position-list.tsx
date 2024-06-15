@@ -21,8 +21,13 @@ interface DataColumns {
   position_count: number;
   claimed_fees_usd: number;
   claimed_rewards_usd: number;
+  unclaimed_fees_usd: number;
+  unclaimed_rewards_usd: number;
+  total_fees_rewards_usd: number;
   deposits_usd: number;
   withdraws_usd: number;
+  current_usd: number;
+  withdraws_and_current_usd: number;
   total_profit: number;
   average_balance: number;
 }
@@ -65,31 +70,34 @@ export const UserPositionList = (props: {
     position_count: props.positionLoadingState.userProfit.position_count,
     deposits_usd: props.positionLoadingState.userProfit.deposits_usd,
     withdraws_usd: props.positionLoadingState.userProfit.withdraws_usd,
+    current_usd: props.positionLoadingState.userProfit.current_usd,
+    withdraws_and_current_usd:
+      props.positionLoadingState.userProfit.withdraws_and_current_usd,
     claimed_fees_usd: props.positionLoadingState.userProfit.claimed_fees_usd,
     claimed_rewards_usd:
       props.positionLoadingState.userProfit.claimed_rewards_usd,
+    unclaimed_fees_usd:
+      props.positionLoadingState.userProfit.unclaimed_fees_usd,
+    unclaimed_rewards_usd:
+      props.positionLoadingState.userProfit.unclaimed_rewards_usd,
+    total_fees_rewards_usd:
+      props.positionLoadingState.userProfit.total_fees_rewards_usd,
     average_balance:
       props.positionLoadingState.userProfit.total_time == 0
         ? 0
         : props.positionLoadingState.userProfit.balance_time_sum_product /
           props.positionLoadingState.userProfit.total_time,
     total_profit: props.positionLoadingState.userProfit.total_profit,
-  };
+  } as DataColumns;
 
   function sortGroups(sortDescriptor: SortDescriptor) {
     const data = props.positionLoadingState.userProfit.pair_groups.sort(
       (a, b) => {
         switch (sortDescriptor.column) {
-          case "fees_rewards":
+          case "total_fees_rewards_usd":
             return sortDescriptor.direction == "descending"
-              ? b.claimed_fees_usd +
-                  b.claimed_rewards_usd -
-                  a.claimed_fees_usd -
-                  a.claimed_rewards_usd
-              : a.claimed_fees_usd +
-                  a.claimed_rewards_usd -
-                  b.claimed_fees_usd -
-                  b.claimed_rewards_usd;
+              ? b.total_fees_rewards_usd - a.total_fees_rewards_usd
+              : a.total_fees_rewards_usd - b.total_fees_rewards_usd;
 
           case "avg_balance_profit_percent":
             const a_percent =
@@ -116,6 +124,8 @@ export const UserPositionList = (props: {
           case "average_balance":
           case "deposits_usd":
           case "withdraws_usd":
+          case "current_usd":
+          case "withdraws_and_current_usd":
             return sortDescriptor.direction == "descending"
               ? b[sortDescriptor.column] - a[sortDescriptor.column]
               : a[sortDescriptor.column] - b[sortDescriptor.column];
@@ -160,7 +170,7 @@ export const UserPositionList = (props: {
             # of <br />
             Positions
           </TableColumn>
-          <TableColumn key="fees_rewards" allowsSorting>
+          <TableColumn key="total_fees_rewards_usd" allowsSorting>
             Fees & <br />
             Rewards
           </TableColumn>
@@ -173,12 +183,11 @@ export const UserPositionList = (props: {
             Deposits
           </TableColumn>
           <TableColumn
-            key="withdraws_usd"
+            key="withdraws_and_current_usd"
             allowsSorting
             className="hidden lg:table-cell"
           >
-            Total <br />
-            Withdrawals
+            Current Value <br />+ Total Withdrawals
           </TableColumn>
           <TableColumn
             key="total_profit"
@@ -243,9 +252,7 @@ export const UserPositionList = (props: {
                   pairGroup,
                 })}
               >
-                {(
-                  pairGroup.claimed_fees_usd + pairGroup.claimed_rewards_usd
-                ).toLocaleString("en-US", {
+                {pairGroup.total_fees_rewards_usd.toLocaleString("en-US", {
                   style: "currency",
                   currency: "USD",
                   minimumFractionDigits: 2,
@@ -271,7 +278,7 @@ export const UserPositionList = (props: {
                   pairGroup,
                 })}
               >
-                {pairGroup.withdraws_usd.toLocaleString("en-US", {
+                {pairGroup.withdraws_and_current_usd.toLocaleString("en-US", {
                   style: "currency",
                   currency: "USD",
                   minimumFractionDigits: 2,

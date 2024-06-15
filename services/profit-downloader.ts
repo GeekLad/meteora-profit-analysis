@@ -8,6 +8,7 @@ import {
 
 import {
   getAllSignaturesForAddress,
+  getDlmmAndUserPositions,
   getParsedTransactions,
   getPositionAddressesFromSignature,
 } from "./connection";
@@ -94,6 +95,8 @@ interface MeteoraBalanceSummaryData {
 interface MeteoraProfitData {
   position_profit: number;
   total_profit: number;
+  total_fees_rewards_usd: number;
+  withdraws_and_current_usd: number;
   fee_points: number;
   reward_points: number;
   balance_points: number;
@@ -200,13 +203,19 @@ function getPositionMints(poolInfo: MeteoraDlmmPair): MeteoraPositionMints {
   return {
     mintX: poolInfo.mint_x,
     mintY: poolInfo.mint_y,
-    reward1Mint: poolInfo.reward_mint_x,
-    reward2Mint: poolInfo.reward_mint_y,
+    reward1Mint:
+      poolInfo.reward_mint_x == "11111111111111111111111111111111"
+        ? null
+        : poolInfo.reward_mint_x,
+    reward2Mint:
+      poolInfo.reward_mint_y == "11111111111111111111111111111111"
+        ? null
+        : poolInfo.reward_mint_y,
   };
 }
 
 function getSummaryData(
-  postiion: MeteoraPositionWithTransactionMintsAndLbPosition,
+  position: MeteoraPositionWithTransactionMintsAndLbPosition,
   deposits: MeteoraTransactionData[],
   withdraws: MeteoraTransactionData[],
 ): MeteoraPositionSummaryData {
@@ -247,8 +256,8 @@ function getSummaryData(
     deposits_usd,
     withdraws_count,
     withdraws_usd,
-    claimed_fees_usd: postiion.position.total_fee_usd_claimed,
-    claimed_rewards_usd: postiion.position.total_reward_usd_claimed,
+    claimed_fees_usd: position.position.total_fee_usd_claimed,
+    claimed_rewards_usd: position.position.total_reward_usd_claimed,
     most_recent_deposit_withdraw,
     errors,
   };
@@ -398,12 +407,19 @@ function getBalanceSummary(
   const average_balance =
     total_time == 0 ? 0 : balance_time_sum_product / total_time;
   const balance_points = average_balance * total_time_days;
+  const withdraws_and_current_usd = withdraws_usd + current_usd;
+  const total_fees_rewards_usd =
+    claimed_fees_usd +
+    unclaimed_fees_usd +
+    claimed_rewards_usd +
+    unclaimed_rewards_usd;
   const fee_points = 1000 * (claimed_fees_usd + unclaimed_fees_usd);
   const reward_points = 1000 * (claimed_rewards_usd + unclaimed_rewards_usd);
   const total_points = balance_points + fee_points + reward_points;
   const position_profit = withdraws_usd + current_usd - deposits_usd;
   const total_profit =
     position_profit +
+    current_usd +
     claimed_fees_usd +
     claimed_rewards_usd +
     unclaimed_fees_usd +
@@ -417,6 +433,8 @@ function getBalanceSummary(
     position_profit,
     total_profit,
     balance_points,
+    withdraws_and_current_usd,
+    total_fees_rewards_usd,
     fee_points,
     reward_points,
     total_points,
@@ -579,6 +597,7 @@ export async function getMeteoraProfitForAccountOrSignature(
       addressCheckCount: number,
       profit: MeteoraPositionProfit,
     ) => any;
+    onOpenPositionUpdated?: (profit: MeteoraPositionProfit) => any;
     onDone?: () => any;
   },
 ): Promise<MeteoraPositionProfit[]> {
@@ -686,7 +705,7 @@ export async function getMeteoraProfitForAccountOrSignature(
     _checkCompletionCallbacks();
   }
 
-  function _checkCompletionCallbacks() {
+  async function _checkCompletionCallbacks() {
     _updateClosedPositions();
     if (
       allSignaturesFound &&
@@ -701,6 +720,7 @@ export async function getMeteoraProfitForAccountOrSignature(
       positionsAnalyzed == allPositionAddresses.length
     ) {
       if (callbacks?.onDone) {
+        await _updateOpenPositions();
         callbacks.onDone();
       }
     }
@@ -715,6 +735,43 @@ export async function getMeteoraProfitForAccountOrSignature(
         profit.errors.push("Closed position missing withdraws");
       }
     });
+  }
+
+  async function _updateOpenPositions() {
+    const openPositions = allProfits.filter(
+      (profit) => profit.is_closed === false,
+    );
+
+    await Promise.all(
+      openPositions.map(async (position) => {
+        const { userPositions } = await getDlmmAndUserPositions(
+          connection,
+          position.position.pair_address,
+          position.position.owner,
+        );
+
+        const lbPosition = userPositions.find(
+          (lbPosition) =>
+            lbPosition.publicKey.toBase58() == position.position.address,
+        );
+
+        position.lbPosition = lbPosition;
+        if (lbPosition) {
+          const updatedPosition = await finalizePositionData(
+            connection,
+            position,
+          );
+
+          const index = allProfits.indexOf(position);
+
+          allProfits[index] = updatedPosition;
+
+          if (callbacks?.onOpenPositionUpdated) {
+            callbacks.onOpenPositionUpdated(updatedPosition);
+          }
+        }
+      }),
+    );
   }
 
   return allProfits;
@@ -739,11 +796,13 @@ function getMeteoraPositionGroups(
     const positionsWithErrors = pairPositions.filter(
       (position) => position.errors.length > 0,
     );
-    const closedPositions = positionsWithoutErrors.filter(
-      (position) => position.is_closed == true,
+    const analyzedPositions = positionsWithoutErrors.filter(
+      (position) =>
+        position.is_closed == true ||
+        (position.is_closed === false && position.lbPosition),
     );
-    const openPositions = positionsWithoutErrors.filter(
-      (position) => !position.is_closed,
+    const unAnalyzedOpenPositions = positionsWithoutErrors.filter(
+      (position) => !position.is_closed && !position.lbPosition,
     );
 
     const balance_time_sum_product = total(
@@ -753,20 +812,20 @@ function getMeteoraPositionGroups(
     const total_time = total(positionsWithoutErrors, "total_time");
     const fee_points = total(pairPositions, "fee_points");
     const reward_points = total(pairPositions, "reward_points");
-    const balance_points = total(closedPositions, "balance_points");
+    const balance_points = total(analyzedPositions, "balance_points");
     const total_points = fee_points + reward_points + balance_points;
 
     pairs.push({
       name: pairPositions[0].pair_name,
       pair_address: pairPositions[0].position.pair_address,
-      position_count: closedPositions.length,
-      positions: closedPositions,
-      openPositions: openPositions,
+      position_count: analyzedPositions.length,
+      positions: analyzedPositions,
+      openPositions: unAnalyzedOpenPositions,
       positionsWithErrors,
-      deposit_count: total(closedPositions, "deposit_count"),
-      deposits_usd: total(closedPositions, "deposits_usd"),
-      withdraws_count: total(closedPositions, "withdraws_count"),
-      withdraws_usd: total(closedPositions, "withdraws_usd"),
+      deposit_count: total(analyzedPositions, "deposit_count"),
+      deposits_usd: total(analyzedPositions, "deposits_usd"),
+      withdraws_count: total(analyzedPositions, "withdraws_count"),
+      withdraws_usd: total(analyzedPositions, "withdraws_usd"),
       claimed_fees_usd: total(pairPositions, "claimed_fees_usd"),
       claimed_rewards_usd: total(pairPositions, "claimed_rewards_usd"),
       most_recent_deposit_withdraw: max(
@@ -775,18 +834,26 @@ function getMeteoraPositionGroups(
       ),
       balance_time_sum_product,
       total_time,
-      total_time_days: total(closedPositions, "total_time_days"),
+      total_time_days: total(analyzedPositions, "total_time_days"),
       average_balance:
         total_time == 0 ? 0 : balance_time_sum_product / total_time,
-      current_usd: total(closedPositions, "current_usd"),
-      unclaimed_fees_usd: total(closedPositions, "unclaimed_fees_usd"),
-      unclaimed_rewards_usd: total(closedPositions, "unclaimed_rewards_usd"),
-      position_profit: total(closedPositions, "position_profit"),
-      total_profit: total(closedPositions, "total_profit"),
+      current_usd: total(analyzedPositions, "current_usd"),
+      unclaimed_fees_usd: total(analyzedPositions, "unclaimed_fees_usd"),
+      unclaimed_rewards_usd: total(analyzedPositions, "unclaimed_rewards_usd"),
+      position_profit: total(analyzedPositions, "position_profit"),
+      total_profit: total(analyzedPositions, "total_profit"),
       fee_points,
       reward_points,
       balance_points,
       total_points,
+      total_fees_rewards_usd: total(
+        analyzedPositions,
+        "total_fees_rewards_usd",
+      ),
+      withdraws_and_current_usd: total(
+        analyzedPositions,
+        "withdraws_and_current_usd",
+      ),
     });
   });
 
@@ -841,6 +908,11 @@ export function getMeteoraPairGroups(
       reward_points: total(pairIdRollups, "reward_points"),
       balance_points: total(pairIdRollups, "balance_points"),
       total_points: total(pairIdRollups, "total_points"),
+      total_fees_rewards_usd: total(pairIdRollups, "total_fees_rewards_usd"),
+      withdraws_and_current_usd: total(
+        pairIdRollups,
+        "withdraws_and_current_usd",
+      ),
     });
   });
 
@@ -878,8 +950,10 @@ export function getMeteoraUserProfit(
     total_time_days: total(pair_groups, "total_time_days"),
     average_balance: total_time ? 0 : balance_time_sum_product / total_time,
     current_usd: total(pair_groups, "current_usd"),
+    withdraws_and_current_usd: total(pair_groups, "withdraws_and_current_usd"),
     unclaimed_fees_usd: total(pair_groups, "unclaimed_fees_usd"),
     unclaimed_rewards_usd: total(pair_groups, "unclaimed_rewards_usd"),
+    total_fees_rewards_usd: total(pair_groups, "total_fees_rewards_usd"),
     position_profit: total(pair_groups, "position_profit"),
     total_profit: total(pair_groups, "total_profit"),
     fee_points: total(pair_groups, "fee_points"),

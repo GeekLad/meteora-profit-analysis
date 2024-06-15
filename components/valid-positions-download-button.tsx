@@ -12,7 +12,7 @@ export const ValidPositionsDownloadButton = (props: {
   profits: MeteoraPositionProfit[];
 }) => {
   const validProfitData = props.profits.filter(
-    (profit) => profit.errors.length == 0 && profit.is_closed,
+    (profit) => profit.errors.length == 0,
   );
 
   if (

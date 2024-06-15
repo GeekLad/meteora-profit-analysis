@@ -62,6 +62,8 @@ export default function IndexPage() {
     reward_points: 0,
     balance_points: 0,
     total_points: 0,
+    total_fees_rewards_usd: 0,
+    withdraws_and_current_usd: 0,
   };
 
   const defaultState: PositionLoadingState = {
@@ -114,7 +116,7 @@ export default function IndexPage() {
       });
     }
 
-    if (pctComplete < 0.1 || checkPoints.length < 60) {
+    if (pctComplete < 0.1 || checkPoints.length < 30) {
       currentState.eta = "Calculating...";
 
       return currentState;
@@ -208,6 +210,21 @@ export default function IndexPage() {
                   profits,
                   userProfit,
                 });
+              });
+            },
+            onOpenPositionUpdated(profit) {
+              setPositionLoadingState((currentState) => {
+                const existingProfit = currentState.profits.find(
+                  (p) => p.position.address == profit.position.address,
+                )!;
+                const index = currentState.profits.indexOf(existingProfit);
+
+                currentState.profits[index] = profit;
+                currentState.userProfit = getMeteoraUserProfit(
+                  currentState.profits,
+                );
+
+                return updatePositionLoadingState(currentState);
               });
             },
             onDone() {

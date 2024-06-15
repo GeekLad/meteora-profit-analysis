@@ -7,11 +7,35 @@ import { ValidPositionsDownloadButton } from "./valid-positions-download-button"
 import { MetricCard } from "./metric-card";
 
 import { PositionLoadingState } from "@/pages";
+import { MeteoraPositionProfit } from "@/services/profit-downloader";
 
 export const LoadingSummary = (props: {
   loading: boolean;
   positionLoadingState: PositionLoadingState;
 }) => {
+  let progress = props.positionLoadingState.positionProgress;
+  let openPositions: MeteoraPositionProfit[] = [];
+  let updatedOpenPositions: MeteoraPositionProfit[] = [];
+  let done = props.positionLoadingState.allPositionsFound;
+
+  if (progress == 100) {
+    openPositions = props.positionLoadingState.profits.filter(
+      (position) => position.is_closed === false,
+    );
+    updatedOpenPositions = openPositions.filter(
+      (position) => position.lbPosition,
+    );
+
+    progress =
+      openPositions.length == 0
+        ? 100
+        : Math.round(
+            (100 * updatedOpenPositions.length) / openPositions.length,
+          );
+
+    done = progress == 100;
+  }
+
   return (
     <div className="md:flex w-auto">
       <Card className="md:m-4 md:w-1/2 sm:w-full">
@@ -54,12 +78,17 @@ export const LoadingSummary = (props: {
             title="# of Positions Analyzed"
             value={props.positionLoadingState.profits.length}
           />
+          <LoadingItem
+            loading={props.loading}
+            title="# of Open Positions Updated"
+            value={updatedOpenPositions.length}
+          />
           {!props.positionLoadingState.done ? (
             <Progress
               className="mt-4"
               isIndeterminate={!props.positionLoadingState.allPositionsFound}
-              showValueLabel={props.positionLoadingState.allPositionsFound}
-              value={props.positionLoadingState.positionProgress}
+              showValueLabel={done}
+              value={progress}
             />
           ) : (
             <></>
@@ -85,16 +114,22 @@ export const LoadingSummary = (props: {
           />
         </div>
         <div className="md:flex justify-end items-end">
-          <MissingTransactionsDownloadButton
-            positionAddresses={props.positionLoadingState.positionAddresses}
-            profits={props.positionLoadingState.profits}
-          />
-          <ValidPositionsDownloadButton
-            profits={props.positionLoadingState.profits}
-          />
-          <AllPositionsDownloadButton
-            profits={props.positionLoadingState.profits}
-          />
+          {props.loading ? (
+            <></>
+          ) : (
+            <>
+              <MissingTransactionsDownloadButton
+                positionAddresses={props.positionLoadingState.positionAddresses}
+                profits={props.positionLoadingState.profits}
+              />
+              <ValidPositionsDownloadButton
+                profits={props.positionLoadingState.profits}
+              />
+              <AllPositionsDownloadButton
+                profits={props.positionLoadingState.profits}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>

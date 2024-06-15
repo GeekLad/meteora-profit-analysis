@@ -100,6 +100,22 @@ export const AllPositionsDownloadButton = (props: {
         return data;
       });
 
+    const hasErrors = profitData.some((profit) => profit.errors.length > 0);
+
+    if (!hasErrors) {
+      const profitDataWithErrorsRemoved = profitData.map((profit) => {
+        // @ts-ignore
+        delete profit.errors;
+
+        return profit;
+      });
+
+      return downloadObjArrayAsCsv(
+        "dlmm-all-position-summary.csv",
+        profitDataWithErrorsRemoved,
+      );
+    }
+
     downloadObjArrayAsCsv("dlmm-all-position-summary.csv", profitData);
   };
 
