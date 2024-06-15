@@ -419,7 +419,6 @@ function getBalanceSummary(
   const position_profit = withdraws_usd + current_usd - deposits_usd;
   const total_profit =
     position_profit +
-    current_usd +
     claimed_fees_usd +
     claimed_rewards_usd +
     unclaimed_fees_usd +
