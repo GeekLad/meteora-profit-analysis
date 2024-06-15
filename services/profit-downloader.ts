@@ -730,7 +730,11 @@ export async function getMeteoraProfitForAccountOrSignature(
       profit.is_closed = closedPositionAddresses.includes(
         profit.position.address,
       );
-      if (profit.is_closed && profit.withdraws_count == 0) {
+      if (
+        profit.is_closed &&
+        profit.withdraws_count == 0 &&
+        !profit.errors.includes("Closed position missing withdraws")
+      ) {
         profit.errors.push("Closed position missing withdraws");
       }
     });
