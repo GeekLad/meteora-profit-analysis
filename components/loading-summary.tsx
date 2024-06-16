@@ -6,7 +6,7 @@ import { AllPositionsDownloadButton } from "./all-positions-download-button";
 import { ValidPositionsDownloadButton } from "./valid-positions-download-button";
 import { MetricCard } from "./metric-card";
 
-import { PositionLoadingState } from "@/pages";
+import { type PositionLoadingState } from "@/pages/wallet/[walletAddress]";
 import { MeteoraPositionProfit } from "@/services/profit-downloader";
 
 export const LoadingSummary = (props: {

@@ -1,9 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { Spinner } from "@nextui-org/react";
 
 import { AppState } from "@/pages/_app";
-import { title, subtitle } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
 import {
   MeteoraPositionProfit,
@@ -269,4 +267,24 @@ export default function IndexPage() {
       </section>
     </DefaultLayout>
   );
+}
+export interface PositionLoadingState {
+  startTime: number;
+  durationString: string;
+  durationHandler?: NodeJS.Timeout;
+  signatureCount: number;
+  allSignaturesFound: boolean;
+  allPositionsFound: boolean;
+  addressCheckCount: number;
+  positionAddresses: string[];
+  closedPositionAddresses: string[];
+  profits: MeteoraPositionProfit[];
+  userProfit: MeteoraUserProfit;
+  checkPoints: {
+    pctComplete: number;
+    time: number;
+  }[];
+  positionProgress: number;
+  eta: string;
+  done: boolean;
 }

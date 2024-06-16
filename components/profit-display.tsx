@@ -2,7 +2,7 @@ import { UserPositionList } from "./user-position-list";
 import { LoadingSummary } from "./loading-summary";
 import { NoResultsFound } from "./no-results-found";
 
-import { PositionLoadingState } from "@/pages";
+import { PositionLoadingState } from "@/pages/wallet/[walletAddress]";
 
 export const ProfitDisplay = (props: {
   loading: boolean;

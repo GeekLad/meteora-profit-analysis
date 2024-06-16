@@ -9,7 +9,7 @@ import {
 } from "@nextui-org/react";
 import { useState } from "react";
 
-import { PositionLoadingState } from "@/pages";
+import { PositionLoadingState } from "@/pages/wallet/[walletAddress]";
 import { MeteoraPairGroup } from "@/services/profit-downloader";
 
 interface DataColumns {

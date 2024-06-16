@@ -1,6 +1,5 @@
 import { useContext, useState } from "react";
 import { useRouter } from "next/router";
-import { Spinner } from "@nextui-org/react";
 
 import { AppState } from "./_app";
 
