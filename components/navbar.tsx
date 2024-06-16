@@ -9,14 +9,19 @@ import { RpcInput } from "./rpc-input";
 
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Logo } from "@/components/icons";
+import Link from "next/link";
 
 export const Navbar = () => {
   return (
     <NextUINavbar maxWidth="xl" position="sticky">
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
         <NavbarBrand className="gap-3 max-w-fit">
-          <Logo />
-          <p className="font-bold text-inherit">Meteora Profit Analysis</p>
+          <Link href="/">
+            <Logo />
+          </Link>
+          <Link href="/">
+            <p className="font-bold text-inherit">Meteora Profit Analysis</p>
+          </Link>
         </NavbarBrand>
       </NavbarContent>
 
