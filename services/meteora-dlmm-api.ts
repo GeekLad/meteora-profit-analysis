@@ -146,33 +146,6 @@ const fetchClaimRewards = THROTTLE_METEORA_DETAIL_API(
     ),
 );
 
-export async function OLD_getPositionData(
-  positionAddress: string,
-): Promise<MeteoraPositionWithTransactions | undefined> {
-  try {
-    const [positionResponse, depositsResponse, withdrawsResponse] =
-      await Promise.all([
-        fetchPosition(positionAddress),
-        fetchDeposits(positionAddress),
-        fetchWithdraws(positionAddress),
-      ]);
-
-    const [position, deposits, withdraws] = await Promise.all([
-      positionResponse.json() as unknown as MeteoraPositionData,
-      depositsResponse.json() as unknown as MeteoraTransactionData[],
-      withdrawsResponse.json() as unknown as MeteoraTransactionData[],
-    ]);
-
-    return {
-      position,
-      deposits,
-      withdraws,
-    };
-  } catch (err) {
-    return undefined;
-  }
-}
-
 export async function getPositionData(
   positionAddress: string,
 ): Promise<MeteoraPositionWithTransactions | undefined> {
