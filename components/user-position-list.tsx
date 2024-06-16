@@ -10,7 +10,10 @@ import {
 import { useState } from "react";
 
 import { PositionLoadingState } from "@/pages";
-import { MeteoraPairGroup } from "@/services/profit-downloader";
+import {
+  MeteoraPairGroup,
+  getMeteoraApiDataFromUserProfit,
+} from "@/services/profit-downloader";
 
 interface DataColumns {
   name: {
