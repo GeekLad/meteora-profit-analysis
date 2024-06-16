@@ -152,15 +152,12 @@ export async function getPositionData(
   const positionResponse: Response = await fetchPosition(positionAddress);
 
   if (positionResponse.status == 500) {
-    console.warn(`Position ${positionAddress} not found`);
-
     return undefined;
   }
 
   if (positionResponse.status == 429) {
     const errMsg = `Throttled while loading ${positionAddress}`;
 
-    console.error(errMsg);
     throw new Error(errMsg);
   }
 
@@ -170,9 +167,6 @@ export async function getPositionData(
 
     return getPositionDetails(position);
   } catch (err) {
-    console.warn(`Position ${positionAddress} not found`);
-    console.error(err);
-
     return undefined;
   }
 }
