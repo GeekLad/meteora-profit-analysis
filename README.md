@@ -40,7 +40,7 @@ bun run dev
 ### Build static html output that can be hosted
 
 The app can be built to be hosted on 100% static HTML pages, which will be
-output to `/build`. To build the project:
+output to `/out`. To build the project:
 
 ```bash
 bun run build
