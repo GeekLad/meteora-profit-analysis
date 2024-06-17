@@ -245,7 +245,9 @@ export default function IndexPage() {
   }
 
   useEffect(() => {
-    loadTransactions();
+    if (router.query.walletAddress) {
+      loadTransactions();
+    }
   }, [router.query.walletAddress]);
 
   if (loading && positionLoadingState.signatureCount == 0) {
