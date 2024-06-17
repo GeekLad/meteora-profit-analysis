@@ -137,7 +137,6 @@ export default function IndexPage() {
 
   async function loadTransactions() {
     if (appState.connection) {
-      setLoading(true);
       setPositionLoadingState(() => {
         return { ...defaultState, startTime: new Date().getTime() };
       });
@@ -246,10 +245,8 @@ export default function IndexPage() {
   }
 
   useEffect(() => {
-    if (router.query.walletAddress) {
-      loadTransactions();
-    }
-  }, [router.query]);
+    loadTransactions();
+  }, [router.query.walletAddress]);
 
   if (loading && positionLoadingState.signatureCount == 0) {
     return <FullPageSpinner />;
