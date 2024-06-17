@@ -4,12 +4,12 @@ import {
   NavbarBrand,
   NavbarItem,
 } from "@nextui-org/react";
+import Link from "next/link";
 
 import { RpcInput } from "./rpc-input";
 
 import { ThemeSwitch } from "@/components/theme-switch";
 import { Logo } from "@/components/icons";
-import Link from "next/link";
 
 export const Navbar = () => {
   return (
