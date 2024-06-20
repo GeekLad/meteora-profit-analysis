@@ -337,7 +337,7 @@ async function getCurrentValue(
     const { mintX, mintY, reward1Mint, reward2Mint } =
       positionWithMintsAndLbPosition.mints;
 
-    const [x, y, x_fees, y_fees, reward1, reward2] = await Promise.all([
+    let [x, y, x_fees, y_fees, reward1, reward2] = await Promise.all([
       lamportsToUsd(
         connection,
         mintX,
@@ -365,6 +365,20 @@ async function getCurrentValue(
             Number(lbPosition.positionData.rewardOne),
           ),
     ]);
+
+    // Special case for DED rewards decimals
+    if (
+      reward1Mint &&
+      reward1Mint == "7raHqUrZXAqtxFJ2wcmtpH7SQYLeN9447vD4KhZM7tcP"
+    ) {
+      reward1 /= 10 ** 7;
+    }
+    if (
+      reward2Mint &&
+      reward2Mint == "7raHqUrZXAqtxFJ2wcmtpH7SQYLeN9447vD4KhZM7tcP"
+    ) {
+      reward2 /= 10 ** 7;
+    }
 
     return {
       current_usd: x + y,

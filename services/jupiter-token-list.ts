@@ -92,11 +92,10 @@ export async function lamportsToUsd(
   address: string,
   lamports: number,
 ): Promise<number> {
+  //
   const decimals = await getDecimals(connection, address);
 
-  // Special case for 2-digit tokens
-  const adjustedDecimals = decimals == 2 ? 6 : decimals;
-  const price = await getPrice(address, adjustedDecimals);
+  const price = await getPrice(address, decimals);
 
   return (lamports / 10 ** decimals) * price.price;
 }
