@@ -472,8 +472,11 @@ async function finalizePositionData(
 export async function getPositionProfit(
   connection: Connection,
   positionAddress: string,
+  positionData?: MeteoraPositionWithTransactions,
 ): Promise<MeteoraPositionProfit | undefined> {
-  const positionData = await getPositionData(positionAddress);
+  if (!positionData) {
+    positionData = await getPositionData(positionAddress);
+  }
 
   if (!positionData) {
     return undefined;
@@ -599,185 +602,206 @@ export async function getMeteoraProfitForAccountOrSignature(
     onOpenPositionUpdated?: (profit: MeteoraPositionProfit) => any;
     onDone?: () => any;
   },
+  allProfits: MeteoraPositionProfit[] = [],
 ): Promise<MeteoraPositionProfit[]> {
-  const allSignatures = [];
-  const allPositionAddresses: string[] = [];
-  const closedPositionAddresses: string[] = [];
-  const allProfits: MeteoraPositionProfit[] = [];
-  let signatureCount = 0;
-  let signaturesChecked = 0;
-  let positionsAnalyzed = 0;
-  let allSignaturesFound = false;
+  return new Promise(async (resolve) => {
+    const allSignatures = [];
+    const allPositionAddresses: string[] = [];
+    const closedPositionAddresses: string[] = [];
+    let signatureCount = 0;
+    let signaturesChecked = 0;
+    let positionsAnalyzed = 0;
+    let allSignaturesFound = false;
+    const until =
+      allProfits.length == 0
+        ? undefined
+        : allProfits
+            .map((profit) => {
+              return profit.deposits.concat(profit.withdraws);
+            })
+            .flat()
+            .sort((a, b) => b.onchain_timestamp - a.onchain_timestamp)[0].tx_id;
 
-  if (accountOrSignature.length == 44 || accountOrSignature.length == 43) {
-    await getAllSignaturesForAddress(
-      connection,
-      accountOrSignature,
-      async (signatures) => _processSignatures(signatures),
-      () => {
-        allSignaturesFound = true;
-        if (callbacks?.onAllSignaturesFound) {
-          callbacks.onAllSignaturesFound();
-        }
-        _checkCompletionCallbacks();
-      },
-    );
-  } else {
-    const positionAddressesFromSignature =
-      await getPositionAddressesFromSignature(connection, accountOrSignature);
-
-    await Promise.all(
-      positionAddressesFromSignature.map((positionAddress) => {
-        getAllSignaturesForAddress(
-          connection,
-          positionAddress,
-          async (signatures) => _processSignatures(signatures),
-        );
-      }),
-    );
-    allSignaturesFound = true;
-    if (callbacks?.onAllSignaturesFound) {
-      callbacks.onAllSignaturesFound();
-    }
-    _checkCompletionCallbacks();
-  }
-
-  function _processSignatures(signatures: ConfirmedSignatureInfo[]) {
-    const validSignatures = signatures.filter(
-      (signature) => signature.err == null,
-    );
-
-    if (validSignatures.length > 0) {
-      const newSignatures = validSignatures.map(
-        (signature) => signature.signature,
-      );
-
-      allSignatures.push(...newSignatures);
-
-      signatureCount += validSignatures.length;
-
-      if (callbacks?.onSignaturesFound) {
-        callbacks.onSignaturesFound(signatureCount);
-      }
-
-      _findPositionAddresses(newSignatures);
-    }
-  }
-
-  async function _findPositionAddresses(signatures: string[]) {
-    const parsedTransactions = await getParsedTransactions(
-      connection,
-      signatures,
-    );
-
-    getMeteoraPositionAddressesFromParsedTransactions(
-      parsedTransactions,
-      (positionAddress) => {
-        if (!allPositionAddresses.includes(positionAddress)) {
-          allPositionAddresses.push(positionAddress);
-          if (callbacks?.onPositionFound) {
-            callbacks.onPositionFound(positionAddress);
+    if (accountOrSignature.length == 44 || accountOrSignature.length == 43) {
+      await getAllSignaturesForAddress(
+        connection,
+        accountOrSignature,
+        async (signatures) => _processSignatures(signatures),
+        () => {
+          allSignaturesFound = true;
+          if (callbacks?.onAllSignaturesFound) {
+            callbacks.onAllSignaturesFound();
           }
-          _getPositionProfit(positionAddress);
-        }
-      },
-      (positionAddress) => {
-        if (!closedPositionAddresses.includes(positionAddress)) {
-          closedPositionAddresses.push(positionAddress);
-        }
-      },
-    );
-    signaturesChecked += signatures.length;
-    _checkCompletionCallbacks();
-  }
-
-  async function _getPositionProfit(positionAddress: string) {
-    const profit = await getPositionProfit(connection, positionAddress);
-
-    positionsAnalyzed++;
-    if (profit) {
-      if (callbacks?.onProfitAnalyzed) {
-        callbacks.onProfitAnalyzed(positionsAnalyzed, profit);
-      }
-      allProfits.push(profit);
-    }
-    _checkCompletionCallbacks();
-  }
-
-  async function _checkCompletionCallbacks() {
-    _updateClosedPositions();
-    if (
-      allSignaturesFound &&
-      signaturesChecked == allSignatures.length &&
-      callbacks?.onAllPositionsFound
-    ) {
-      callbacks.onAllPositionsFound();
-    }
-    if (
-      allSignaturesFound &&
-      signaturesChecked == allSignatures.length &&
-      positionsAnalyzed == allPositionAddresses.length
-    ) {
-      if (callbacks?.onDone) {
-        await _updateOpenPositions();
-        callbacks.onDone();
-      }
-    }
-  }
-
-  function _updateClosedPositions() {
-    allProfits.forEach((profit) => {
-      profit.is_closed = closedPositionAddresses.includes(
-        profit.position.address,
+          _checkCompletionCallbacks();
+        },
+        until,
       );
-      if (
-        profit.is_closed &&
-        profit.withdraws_count == 0 &&
-        !profit.errors.includes("Closed position missing withdraws")
-      ) {
-        profit.errors.push("Closed position missing withdraws");
-      }
-    });
-  }
+    } else {
+      const positionAddressesFromSignature =
+        await getPositionAddressesFromSignature(connection, accountOrSignature);
 
-  async function _updateOpenPositions() {
-    const openPositions = allProfits.filter(
-      (profit) => profit.is_closed === false,
-    );
-
-    await Promise.all(
-      openPositions.map(async (position) => {
-        const { userPositions } = await getDlmmAndUserPositions(
-          connection,
-          position.position.pair_address,
-          position.position.owner,
-        );
-
-        const lbPosition = userPositions.find(
-          (lbPosition) =>
-            lbPosition.publicKey.toBase58() == position.position.address,
-        );
-
-        position.lbPosition = lbPosition;
-        if (lbPosition) {
-          const updatedPosition = await finalizePositionData(
+      await Promise.all(
+        positionAddressesFromSignature.map((positionAddress) => {
+          getAllSignaturesForAddress(
             connection,
-            position,
+            positionAddress,
+            async (signatures) => _processSignatures(signatures),
+          );
+        }),
+      );
+      allSignaturesFound = true;
+      if (callbacks?.onAllSignaturesFound) {
+        callbacks.onAllSignaturesFound();
+      }
+      _checkCompletionCallbacks();
+    }
+
+    function _processSignatures(signatures: ConfirmedSignatureInfo[]) {
+      const validSignatures = signatures.filter(
+        (signature) => signature.err == null,
+      );
+
+      if (validSignatures.length > 0) {
+        const newSignatures = validSignatures.map(
+          (signature) => signature.signature,
+        );
+
+        allSignatures.push(...newSignatures);
+
+        signatureCount += validSignatures.length;
+
+        if (callbacks?.onSignaturesFound) {
+          callbacks.onSignaturesFound(signatureCount);
+        }
+
+        _findPositionAddresses(newSignatures);
+      }
+    }
+
+    async function _findPositionAddresses(signatures: string[]) {
+      const parsedTransactions = await getParsedTransactions(
+        connection,
+        signatures,
+      );
+
+      getMeteoraPositionAddressesFromParsedTransactions(
+        parsedTransactions,
+        (positionAddress) => {
+          if (!allPositionAddresses.includes(positionAddress)) {
+            allPositionAddresses.push(positionAddress);
+            if (callbacks?.onPositionFound) {
+              callbacks.onPositionFound(positionAddress);
+            }
+            _getPositionProfit(positionAddress);
+          }
+        },
+        (positionAddress) => {
+          if (!closedPositionAddresses.includes(positionAddress)) {
+            closedPositionAddresses.push(positionAddress);
+          }
+        },
+      );
+      signaturesChecked += signatures.length;
+      _checkCompletionCallbacks();
+    }
+
+    async function _getPositionProfit(positionAddress: string) {
+      const profit = await getPositionProfit(connection, positionAddress);
+
+      positionsAnalyzed++;
+      if (profit) {
+        if (callbacks?.onProfitAnalyzed) {
+          callbacks.onProfitAnalyzed(positionsAnalyzed, profit);
+        }
+        allProfits.push(profit);
+      }
+      _checkCompletionCallbacks();
+    }
+
+    async function _checkCompletionCallbacks() {
+      _updateClosedPositions();
+      if (
+        allSignaturesFound &&
+        signaturesChecked == allSignatures.length &&
+        callbacks?.onAllPositionsFound
+      ) {
+        callbacks.onAllPositionsFound();
+      }
+      if (
+        allSignaturesFound &&
+        signaturesChecked == allSignatures.length &&
+        positionsAnalyzed == allPositionAddresses.length
+      ) {
+        if (callbacks?.onDone) {
+          await _updateOpenPositions();
+          callbacks.onDone();
+        }
+        resolve(allProfits);
+      }
+    }
+
+    function _updateClosedPositions() {
+      allProfits.forEach((profit) => {
+        profit.is_closed = closedPositionAddresses.includes(
+          profit.position.address,
+        );
+        if (
+          profit.is_closed &&
+          profit.withdraws_count == 0 &&
+          !profit.errors.includes("Closed position missing withdraws")
+        ) {
+          profit.errors.push("Closed position missing withdraws");
+        }
+      });
+    }
+
+    async function _updateOpenPositions() {
+      const openPositions = allProfits.filter(
+        (profit) => profit.is_closed === false,
+      );
+
+      await Promise.all(
+        openPositions.map(async (position) => {
+          if (until) {
+            const positionData = await getPositionData(
+              position.position.address,
+            );
+
+            position.position = positionData!.position;
+            position.deposits = positionData!.deposits;
+            position.withdraws = positionData!.withdraws;
+          }
+
+          const { userPositions } = await getDlmmAndUserPositions(
+            connection,
+            position.position.pair_address,
+            position.position.owner,
           );
 
-          const index = allProfits.indexOf(position);
+          const lbPosition = userPositions.find(
+            (lbPosition) =>
+              lbPosition.publicKey.toBase58() == position.position.address,
+          );
 
-          allProfits[index] = updatedPosition;
+          position.lbPosition = lbPosition;
+          if (lbPosition) {
+            const updatedPosition = await finalizePositionData(
+              connection,
+              position,
+            );
 
-          if (callbacks?.onOpenPositionUpdated) {
-            callbacks.onOpenPositionUpdated(updatedPosition);
+            const index = allProfits.indexOf(position);
+
+            allProfits[index] = updatedPosition;
+
+            if (callbacks?.onOpenPositionUpdated) {
+              callbacks.onOpenPositionUpdated(updatedPosition);
+            }
           }
-        }
-      }),
-    );
-  }
-
-  return allProfits;
+        }),
+      );
+    }
+  });
 }
 
 function getMeteoraPositionGroups(
@@ -999,5 +1023,35 @@ export function sortProfitsByRecentGroupTransactions(
       groupTimestamps.get(b.pair_name.group_id)! -
         groupTimestamps.get(a.pair_name.group_id)! ||
       b.most_recent_deposit_withdraw - a.most_recent_deposit_withdraw,
+  );
+}
+
+export async function getProfitsFromPositionData(
+  connection: Connection,
+  walletAddress: string,
+  positionData: MeteoraPositionWithTransactions[],
+  openPositionAddresses: string[],
+): Promise<MeteoraPositionProfit[]> {
+  const profits = (await Promise.all(
+    positionData.map(async (data) => {
+      const profit = (await getPositionProfit(
+        connection,
+        data.position.address,
+        data,
+      )) as MeteoraPositionProfit;
+
+      profit.is_closed = !openPositionAddresses.includes(
+        profit.position.address,
+      );
+
+      return profit;
+    }),
+  )) as MeteoraPositionProfit[];
+
+  return getMeteoraProfitForAccountOrSignature(
+    connection,
+    walletAddress,
+    undefined,
+    profits,
   );
 }

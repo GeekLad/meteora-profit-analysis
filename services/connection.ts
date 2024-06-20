@@ -55,9 +55,14 @@ export const getDlmmAndUserPositions = throttledCachedRequest(
 );
 
 const getSignaturesForAddress = THROTTLE_RPC(
-  async (connection: Connection, pubKey: PublicKey, before?: string) => {
+  async (
+    connection: Connection,
+    pubKey: PublicKey,
+    before?: string,
+    until?: string,
+  ) => {
     return exponentialRetryDelay(() =>
-      connection.getSignaturesForAddress(pubKey, { before }),
+      connection.getSignaturesForAddress(pubKey, { before, until }),
     );
   },
 );
@@ -67,6 +72,7 @@ export async function getAllSignaturesForAddress(
   address: string,
   onSignaturesFound?: (signatures: ConfirmedSignatureInfo[]) => any,
   onDone?: () => any,
+  until?: string,
 ): Promise<ConfirmedSignatureInfo[]> {
   try {
     const pubKey = new PublicKey(address);
@@ -79,7 +85,12 @@ export async function getAllSignaturesForAddress(
         newSignatures.length > 0
           ? newSignatures[newSignatures.length - 1].signature
           : undefined;
-      newSignatures = await getSignaturesForAddress(connection, pubKey, before);
+      newSignatures = await getSignaturesForAddress(
+        connection,
+        pubKey,
+        before,
+        until,
+      );
       allSignatures.push(...newSignatures);
 
       if (onSignaturesFound) {
