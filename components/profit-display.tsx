@@ -3,6 +3,7 @@ import { LoadingSummary } from "./loading-summary";
 import { NoResultsFound } from "./no-results-found";
 
 import { PositionLoadingState } from "@/pages/wallet/[walletAddress]";
+import { ProfitChart } from "./profit-chart";
 
 export const ProfitDisplay = (props: {
   loading: boolean;
@@ -28,6 +29,7 @@ export const ProfitDisplay = (props: {
         />
       </div>
       <div className="w-full">
+        <ProfitChart positionLoadingState={props.positionLoadingState} />
         <UserPositionList positionLoadingState={props.positionLoadingState} />
       </div>
     </div>

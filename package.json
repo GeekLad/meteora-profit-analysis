@@ -40,6 +40,7 @@
     "postcss": "8.4.38",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "recharts": "^2.12.7",
     "rpc-websockets": "^8.0.1",
     "superstruct": "^1.0.4",
     "tailwind-variants": "^0.1.20",

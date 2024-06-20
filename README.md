@@ -7,6 +7,10 @@ a wallet. This tool depends heaviliy on the
 [Meteora Web API](https://dlmm-api.meteora.ag/swagger-ui/) to obtain data on
 positions as well as the deposits & withdrawals made on those positions.
 
+## Try it Live on GitHub Pages
+
+https://geeklad.github.io/meteora-profit-analysis/
+
 ## Technologies Used
 
 - [Next.js 14](https://nextjs.org/docs/getting-started)
