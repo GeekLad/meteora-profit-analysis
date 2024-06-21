@@ -17,18 +17,23 @@ export const ProfitChart = (props: {
     return <></>;
   }
 
-  const data = props.positionLoadingState.profits
+  const validData = props.positionLoadingState.profits
     .sort(
       (a, b) => a.most_recent_deposit_withdraw - b.most_recent_deposit_withdraw,
     )
-    .map((profit) => {
-      return {
-        date: new Date(
-          profit.most_recent_deposit_withdraw,
-        ).toLocaleDateString(),
-        cumulativeProfit: profit.total_profit,
-      };
-    });
+    .filter((profit) => profit.errors.length == 0);
+
+  const data =
+    validData.length == 0
+      ? []
+      : validData.map((profit) => {
+          return {
+            date: new Date(
+              profit.most_recent_deposit_withdraw,
+            ).toLocaleDateString(),
+            cumulativeProfit: profit.total_profit,
+          };
+        });
 
   data.forEach((profit, index) => {
     if (index > 0) {
