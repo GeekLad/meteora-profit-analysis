@@ -85,6 +85,7 @@ export const LoadingSummary = (props: {
           />
           {!props.positionLoadingState.done ? (
             <Progress
+              aria-label="Analysis progress"
               className="mt-4"
               isIndeterminate={!props.positionLoadingState.allPositionsFound}
               showValueLabel={done}

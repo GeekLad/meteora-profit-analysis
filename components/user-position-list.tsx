@@ -147,6 +147,7 @@ export const UserPositionList = (props: {
   return (
     <div className="w-full pl-4 pr-4">
       <Table
+        aria-label="Pair profitability data"
         sortDescriptor={sortDescriptor}
         onSortChange={(descriptor) => setSortDescriptor(descriptor)}
       >
