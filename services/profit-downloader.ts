@@ -656,7 +656,7 @@ export async function getMeteoraProfitForAccountOrSignature(
 
       await Promise.all(
         positionAddressesFromSignature.map((positionAddress) => {
-          getAllSignaturesForAddress(
+          return getAllSignaturesForAddress(
             connection,
             positionAddress,
             async (signatures) => _processSignatures(signatures),
