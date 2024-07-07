@@ -19,7 +19,7 @@ export const WalletForm = (props: {
     <div className="flex sm:w-full md:w-1/2 flex-col gap-4">
       <div className="flex w-full flex-wrap md:flex-nowrap mb-6 md:mb-0 gap-4">
         <Input
-          label="Wallet Address or Transaction Signature"
+          label="Wallet or Position Address"
           type="text"
           onChange={(event) => setWalletAddress(event.target.value)}
           onKeyUp={(event) => onKeyUp(event.key)}
