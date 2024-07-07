@@ -8,7 +8,9 @@ import { Connection } from "@solana/web3.js";
 
 import { fontSans, fontMono } from "@/config/fonts";
 import "@/styles/globals.css";
-import { RPC_URL } from "@/services/config";
+
+const RPC_URL =
+  "https://solana-mainnet.g.alchemy.com/v2/ZT3c4pYf1inIrB0GVDNR7nx4LwyED5Ci";
 
 export interface AppStateInterface {
   rpc: string;

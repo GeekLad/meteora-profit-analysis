@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@debridge-finance/solana-transaction-parser": "^2.0.1",
+    "@internationalized/date": "^3.5.4",
     "@meteora-ag/dlmm": "^1.0.43",
     "@nextui-org/react": "^2.4.0",
     "@project-serum/anchor": "^0.26.0",

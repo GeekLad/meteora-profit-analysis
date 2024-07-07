@@ -1,52 +1,25 @@
-import { type AnyFunction, ThrottledFunction } from "p-throttle";
+import type { AnyFunction, ThrottledFunction } from "p-throttle";
 
 export type UnifiedFetcher = (url: string) => Promise<UnifiedResponse>;
-export type UnifiedMultiFetcher = (url: string[]) => Promise<UnifiedResponse[]>;
+type UnifiedMultiFetcher = (url: string[]) => Promise<UnifiedResponse[]>;
 
-export interface UnifiedResponse {
+interface UnifiedResponse {
   text: () => Promise<string>;
 }
 
-export interface ThrottledCachedRequestOptions<
-  RequestParams extends any[],
-  Response,
-> {
+interface ThrottledCachedRequestOptions<RequestParams extends any[], Response> {
   fn: (...args: RequestParams) => Promise<Response>;
   throttle?: <F extends AnyFunction>(function_: F) => ThrottledFunction<F>;
   maxAge?: number;
 }
 
-export interface ThrottledCachedResponse<Response> {
+interface ThrottledCachedResponse<Response> {
   loadTime: number;
   response: Response;
 }
 
 export async function multiFetch(urls: string[]): Promise<UnifiedResponse[]> {
   return Promise.all(urls.map((url) => fetch(url)));
-}
-
-export async function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export async function exponentialRetryDelay<T>(
-  fn: () => Promise<T>,
-  ms = 1000,
-  retries = 0,
-  maxRetries = 3,
-): Promise<T> {
-  try {
-    return fn();
-  } catch (err) {
-    if (retries > maxRetries) {
-      const errMsg = `Failed to execute ${fn.toString()} after ${maxRetries} retries`;
-
-      throw new Error(errMsg);
-    }
-    await delay(ms);
-
-    return exponentialRetryDelay(fn, ms * 2, retries + 1, maxRetries);
-  }
 }
 
 class ThrottledCachedRequest<RequestParams extends any[], Response> {
@@ -134,7 +107,7 @@ class ThrottledCachedRequest<RequestParams extends any[], Response> {
   }
 }
 
-export function throttledCachedRequest<RequestParams extends any[], Response>(
+function throttledCachedRequest<RequestParams extends any[], Response>(
   fn: (...args: RequestParams) => Promise<Response>,
   throttle: <F extends AnyFunction>(function_: F) => ThrottledFunction<F>,
   maxAge?: number,
@@ -151,34 +124,6 @@ export function cachedRequest<RequestParams extends any[], Response>(
   const cachedRequest = new ThrottledCachedRequest({ fn, maxAge });
 
   return cachedRequest.get.bind(cachedRequest);
-}
-
-export function total<T>(arr: Array<T>, key: keyof T): number {
-  let sum = 0;
-
-  arr.forEach((obj) => {
-    const value = obj[key];
-
-    if (typeof value === "number" && !isNaN(value)) {
-      sum += value;
-    }
-  });
-
-  return sum;
-}
-
-export function max<T>(arr: Array<T>, key: keyof T): number {
-  let values: number[] = [];
-
-  arr.forEach((obj) => {
-    const value = obj[key];
-
-    if (typeof value === "number" && !isNaN(value)) {
-      values.push(value);
-    }
-  });
-
-  return Math.max(...values);
 }
 
 export function downloadStringToFile(filename: string, text: string) {
@@ -198,21 +143,28 @@ export function downloadStringToFile(filename: string, text: string) {
   document.body.removeChild(element);
 }
 
-function objArrayToCsvString(objArray: Array<Object>): string {
+function objArrayToCsvString<T extends Object>(
+  objArray: Array<T>,
+  columns?: Array<keyof T>,
+): string {
   if (objArray.length == 0) {
     return "";
   }
 
-  const output = Object.keys(objArray[0]).join(",");
+  columns = columns ?? (Object.keys(objArray[0]) as Array<keyof T>);
+
+  const output = columns.join(",");
   const lines: string[] = [];
 
   objArray.forEach((obj) => {
-    const line = Object.values(obj)
-      .map((value) =>
-        value !== undefined && value !== null && typeof value != "object"
+    const line = columns
+      .map((key) => {
+        const value = obj[key];
+
+        return value !== undefined && value !== null && typeof value != "object"
           ? '"' + value.toString().replace(/"/g, '""') + '"'
-          : "",
-      )
+          : "";
+      })
       .join(",");
 
     lines.push(line);
@@ -221,11 +173,12 @@ function objArrayToCsvString(objArray: Array<Object>): string {
   return output + "\n" + lines.join("\n");
 }
 
-export function downloadObjArrayAsCsv(
+export function downloadObjArrayAsCsv<T extends Object>(
   filename: string,
-  objArray: Array<Object>,
+  objArray: Array<T>,
+  columns?: Array<keyof T>,
 ) {
-  downloadStringToFile(filename, objArrayToCsvString(objArray));
+  downloadStringToFile(filename, objArrayToCsvString(objArray, columns));
 }
 
 export function isValidUrl(url: string): boolean {
@@ -236,6 +189,128 @@ export function isValidUrl(url: string): boolean {
   } catch (err) {
     return false;
   }
+}
+
+export function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr));
+}
+
+type SummaryMapping<T> = {
+  [metricName: string]:
+    | {
+        summaryMethod: "count";
+        filter?: (t: T) => boolean;
+      }
+    | {
+        summaryMethod: "sum" | "first" | "last";
+        key: keyof T;
+        filter?: (t: T) => boolean;
+        postProcess?: (value: any) => any;
+      }
+    | {
+        summaryMethod: "sum" | "first" | "last";
+        expression: (t: T) => any;
+        filter?: (t: T) => boolean;
+        postProcess?: (value: any) => any;
+      }
+    | {
+        summaryMethod: "custom";
+        map: <V>(value: T, index?: number, array?: T[]) => V;
+        reduce: <V>(
+          previousValue: V,
+          currentValue: V,
+          currentIndex?: number,
+          array?: V[],
+        ) => V;
+        filter?: (t: T) => boolean;
+        postProcess?: (value: any) => any;
+      };
+};
+
+type Summary<T> = {
+  [K in keyof SummaryMapping<T>]: any;
+};
+
+export function summarize<T, U>(
+  objArray: Array<T>,
+  mapping: SummaryMapping<T>,
+  target?: Summary<U>,
+): Summary<T> {
+  const summary: Summary<T> = {};
+
+  Object.entries(mapping).forEach(([metricName, summaryMapping]) => {
+    const filteredValues = summaryMapping.filter
+      ? objArray.filter(summaryMapping.filter)
+      : objArray;
+
+    switch (summaryMapping.summaryMethod) {
+      case "count":
+        summary[metricName] = filteredValues.length;
+        break;
+
+      case "sum":
+        summary[metricName] =
+          filteredValues.length == 0
+            ? 0
+            : "key" in summaryMapping
+              ? filteredValues
+                  .map((value) => Number(value[summaryMapping.key]))
+                  .reduce((total, current) => total + current)
+              : filteredValues
+                  .map((value) => Number(summaryMapping.expression(value)))
+                  .reduce((total, current) => total + current);
+        break;
+
+      case "first":
+        if (filteredValues.length > 0) {
+          // @ts-ignore
+          summary[metricName] = filteredValues[0][summaryMapping.key];
+        }
+        break;
+
+      case "last":
+        if (filteredValues.length > 0) {
+          summary[metricName] =
+            // @ts-ignore
+            filteredValues[filteredValues.length - 1][summaryMapping.key];
+        }
+        break;
+
+      case "custom":
+        if (filteredValues.length > 0) {
+          summary[metricName] = filteredValues
+            .map((value: T, index?: number, array?: T[]) =>
+              summaryMapping.map(value, index, array),
+            )
+            .reduce(
+              <V>(
+                previousValue: V,
+                currentValue: V,
+                currentIndex?: number,
+                array?: V[],
+              ) =>
+                summaryMapping.reduce(
+                  previousValue,
+                  currentValue,
+                  currentIndex,
+                  array,
+                ),
+            );
+        }
+        break;
+    }
+
+    if ("postProcess" in summaryMapping && metricName in summary) {
+      // @ts-ignore
+      summary[metricName] = summaryMapping.postProcess(summary[metricName]);
+    }
+
+    if (target && metricName in summary) {
+      target[metricName] = summary[metricName];
+    }
+  });
+
+  return summary;
 }
 
 export function getDurationString(duration: number) {

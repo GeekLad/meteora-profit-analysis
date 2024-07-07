@@ -8,7 +8,7 @@ export const RpcInput = () => {
 
   return (
     <Input
-      className="m-4 p-4"
+      className="md:m-4 p-4"
       isInvalid={connection == undefined}
       label="RPC"
       value={rpc}
