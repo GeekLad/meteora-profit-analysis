@@ -1,4 +1,5 @@
 import { Transform } from "stream";
+
 import {
   type ConfirmedSignatureInfo,
   Connection,
@@ -33,6 +34,7 @@ export class SignatureStream extends Transform {
 
   private async _streamSignatures() {
     let newSignatures: ConfirmedSignatureInfo[] = [];
+
     do {
       newSignatures = await this._connection.getConfirmedSignaturesForAddress2(
         this._walletAddress,
@@ -46,6 +48,7 @@ export class SignatureStream extends Transform {
         const validSignatures = newSignatures.filter(
           (signature) => !signature.err,
         );
+
         if (validSignatures.length > 0) {
           this.push(validSignatures);
         }
