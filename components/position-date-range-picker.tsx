@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { DateRangePicker, RangeValue } from "@nextui-org/react";
 import {
   CalendarDate,
   getLocalTimeZone,
   parseDate,
-  today,
 } from "@internationalized/date";
 
 import { MeteoraPosition } from "@/services/MeteoraPosition";

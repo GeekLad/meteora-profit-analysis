@@ -157,7 +157,7 @@ function objArrayToCsvString<T extends Object>(
   const lines: string[] = [];
 
   objArray.forEach((obj) => {
-    const line = columns
+    const line = columns!
       .map((key) => {
         const value = obj[key];
 
