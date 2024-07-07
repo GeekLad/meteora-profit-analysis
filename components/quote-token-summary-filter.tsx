@@ -119,7 +119,7 @@ export const QuoteTokenSummaryFilter = (props: {
       <div className="flex w-full justify-end">
         <Button
           aria-label="Filter results"
-          className={!expanded ? "m-4" : "mb-4 mr-4"}
+          className={!expanded ? "m-4" : "mr-4"}
           color="primary"
           startContent={<FilterIcon className="pt-2" size={40} />}
           onClick={() => toggleExpand()}
