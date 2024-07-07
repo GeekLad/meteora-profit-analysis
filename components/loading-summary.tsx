@@ -1,136 +1,70 @@
-import { Card, CardBody, Progress } from "@nextui-org/react";
+import { Card, CardBody } from "@nextui-org/react";
+import { useState } from "react";
 
 import { LoadingItem } from "./loading-status-item";
-import { MissingTransactionsDownloadButton } from "./missing-transactions-download-button";
-import { AllPositionsDownloadButton } from "./all-positions-download-button";
-import { ValidPositionsDownloadButton } from "./valid-positions-download-button";
-import { MetricCard } from "./metric-card";
+import { TransactionsDownloadButton } from "./transactions-download-button";
+import { PositionsDownloadButton } from "./positions-download-button";
+import { QuoteTokenSummaryFilter } from "./quote-token-summary-filter";
 
 import { type PositionLoadingState } from "@/pages/wallet/[walletAddress]";
-import { MeteoraPositionProfit } from "@/services/profit-downloader";
+import { MeteoraPosition } from "@/services/MeteoraPosition";
 
 export const LoadingSummary = (props: {
   loading: boolean;
   positionLoadingState: PositionLoadingState;
+  onFilter: (filteredPositions: MeteoraPosition[]) => any;
 }) => {
-  let progress = props.positionLoadingState.positionProgress;
-  let openPositions: MeteoraPositionProfit[] = [];
-  let updatedOpenPositions: MeteoraPositionProfit[] = [];
-  let done = props.positionLoadingState.allPositionsFound;
-
-  if (progress == 100) {
-    openPositions = props.positionLoadingState.profits.filter(
-      (position) => position.is_closed === false,
-    );
-    updatedOpenPositions = openPositions.filter(
-      (position) => position.lbPosition,
-    );
-
-    progress =
-      openPositions.length == 0
-        ? 100
-        : Math.round(
-            (100 * updatedOpenPositions.length) / openPositions.length,
-          );
-
-    done = progress == 100;
-  }
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="md:flex w-auto">
+    <div className="md:flex w-auto items-end">
       <Card className="md:m-4 md:w-1/2 sm:w-full">
         <CardBody>
           <LoadingItem
             title="Time Elapsed"
             value={props.positionLoadingState.durationString}
           />
-          {props.loading &&
-          props.positionLoadingState.eta &&
-          props.positionLoadingState.eta != "" ? (
-            <LoadingItem
-              title="Estimated time to complete"
-              value={props.positionLoadingState.eta}
-            />
-          ) : (
-            ""
-          )}
           <LoadingItem
             loading={!props.positionLoadingState.allSignaturesFound}
             title="# of Transactions Found"
             value={props.positionLoadingState.signatureCount}
           />
           <LoadingItem
-            loading={!props.positionLoadingState.allPositionsFound}
-            title="# of Positions Found"
-            value={props.positionLoadingState.positionAddresses.length}
+            loading={
+              !props.positionLoadingState.allPositionsFound &&
+              !props.positionLoadingState.done
+            }
+            title="# of Position Transactions"
+            value={props.positionLoadingState.transactionCount}
           />
           <LoadingItem
-            loading={props.loading}
-            title="# of Positions w/ Errors"
-            value={
-              props.positionLoadingState.profits.filter(
-                (profit) => profit.errors.length > 0,
-              ).length
+            hidden={!props.positionLoadingState.allPositionsFound}
+            loading={props.positionLoadingState.updatingOpenPositions}
+            title={
+              props.positionLoadingState.updatingOpenPositions
+                ? "Updating Open Positions"
+                : "Open Positions Updated"
             }
           />
-          <LoadingItem
-            loading={props.loading}
-            title="# of Positions Analyzed"
-            value={props.positionLoadingState.profits.length}
-          />
-          <LoadingItem
-            loading={props.loading}
-            title="# of Open Positions Updated"
-            value={updatedOpenPositions.length}
-          />
-          {!props.positionLoadingState.done ? (
-            <Progress
-              aria-label="Analysis progress"
-              className="mt-4"
-              isIndeterminate={!props.positionLoadingState.allPositionsFound}
-              showValueLabel={done}
-              value={progress}
-            />
-          ) : (
-            <></>
-          )}
         </CardBody>
       </Card>
-      <div className="w-2/3 h-full">
+      <div className="w-2/3">
         <div className="md:flex">
-          <MetricCard
-            label={"Fee Points"}
-            value={
-              props.positionLoadingState.userProfit.fee_points +
-              props.positionLoadingState.userProfit.reward_points
-            }
+          <TransactionsDownloadButton
+            hidden={props.loading || expanded}
+            transactions={props.positionLoadingState.transactions}
           />
-          <MetricCard
-            label={"Balance Points"}
-            value={props.positionLoadingState.userProfit.balance_points}
+          <PositionsDownloadButton
+            hidden={props.loading || expanded}
+            positions={props.positionLoadingState.positions}
           />
-          <MetricCard
-            label={"Total Points"}
-            value={props.positionLoadingState.userProfit.total_points}
+          <QuoteTokenSummaryFilter
+            hidden={props.loading}
+            positions={props.positionLoadingState.positions}
+            tokenMap={props.positionLoadingState.tokenMap}
+            onExpandToggle={(expanded) => setExpanded(expanded)}
+            onFilter={(positions) => props.onFilter(positions)}
           />
-        </div>
-        <div className="md:flex justify-end items-end">
-          {props.loading ? (
-            <></>
-          ) : (
-            <>
-              <MissingTransactionsDownloadButton
-                positionAddresses={props.positionLoadingState.positionAddresses}
-                profits={props.positionLoadingState.profits}
-              />
-              <ValidPositionsDownloadButton
-                profits={props.positionLoadingState.profits}
-              />
-              <AllPositionsDownloadButton
-                profits={props.positionLoadingState.profits}
-              />
-            </>
-          )}
         </div>
       </div>
     </div>

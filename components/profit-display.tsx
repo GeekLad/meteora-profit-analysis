@@ -1,23 +1,31 @@
-import { UserPositionList } from "./user-position-list";
-import { LoadingSummary } from "./loading-summary";
-import { NoResultsFound } from "./no-results-found";
+import { useState } from "react";
 
+import { LoadingSummary } from "./loading-summary";
+import { ProfitSummary } from "./profit-summary";
+
+import { MeteoraPosition } from "@/services/MeteoraPosition";
 import { PositionLoadingState } from "@/pages/wallet/[walletAddress]";
-import { ProfitChart } from "./profit-chart";
 
 export const ProfitDisplay = (props: {
   loading: boolean;
   positionLoadingState: PositionLoadingState;
 }) => {
+  const [initialized, setInitialized] = useState(false);
+  const [filteredPositions, setFilteredPositions] = useState(
+    props.positionLoadingState.positions,
+  );
+
   if (props.positionLoadingState.startTime == 0) {
     return <></>;
   }
 
-  if (
-    props.positionLoadingState.done &&
-    props.positionLoadingState.userProfit.pair_groups.length == 0
-  ) {
-    return <NoResultsFound />;
+  if (!props.loading && !initialized) {
+    setInitialized(true);
+    setFilteredPositions(props.positionLoadingState.positions);
+  }
+
+  function filterPositions(filteredPositions: MeteoraPosition[]) {
+    setFilteredPositions(filteredPositions);
   }
 
   return (
@@ -26,11 +34,13 @@ export const ProfitDisplay = (props: {
         <LoadingSummary
           loading={props.loading}
           positionLoadingState={props.positionLoadingState}
+          onFilter={(positions) => filterPositions(positions)}
         />
-      </div>
-      <div className="w-full">
-        <ProfitChart positionLoadingState={props.positionLoadingState} />
-        <UserPositionList positionLoadingState={props.positionLoadingState} />
+        <ProfitSummary
+          hidden={props.loading}
+          positions={filteredPositions}
+          tokenMap={props.positionLoadingState.tokenMap}
+        />
       </div>
     </div>
   );

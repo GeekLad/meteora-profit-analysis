@@ -2,9 +2,14 @@ import { Spinner } from "@nextui-org/react";
 
 export const LoadingItem = (props: {
   title: string;
-  value: number | string;
+  hidden?: boolean;
+  value?: number | string;
   loading?: boolean;
 }) => {
+  if (props.hidden) {
+    return <></>;
+  }
+
   return (
     <div className="flex columns-2 w-full">
       <div className="text-nowrap">
@@ -16,14 +21,20 @@ export const LoadingItem = (props: {
           ""
         )}
         &nbsp;
-        <b>{props.title}: &nbsp;</b>
+        <b>
+          {props.title}
+          {props.value ? ":" : ""} &nbsp;
+        </b>
       </div>
       <div className="ml-auto">
         {typeof props.value == "number"
-          ? props.value.toLocaleString("en-us", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })
+          ? props.value.toLocaleString(
+              Intl.NumberFormat().resolvedOptions().locale,
+              {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              },
+            )
           : props.value}
       </div>
     </div>
