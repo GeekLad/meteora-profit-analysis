@@ -416,10 +416,6 @@ export class MeteoraPosition {
     this.hasNoFees = this.totalXFees + this.totalYFees == 0;
   }
 
-  // openBalanceValue = 0;
-  // unclaimedFeesValue = 0;
-  // totalFeesValue = 0;
-  // profitLossValue = 0;
   calcPrices() {
     summarize(
       this.transactions,
@@ -452,7 +448,6 @@ export class MeteoraPosition {
           postProcess: (value) => this.floorY(value),
         },
         totalFeesValue: {
-          key: "totalFeesValue",
           summaryMethod: "sum",
           expression: (transaction) =>
             transaction.claimedFeesValue + transaction.unclaimedFeesValue,
@@ -466,9 +461,8 @@ export class MeteoraPosition {
     );
     this.profitLossValue = this.floorY(
       this.netDepositsAndWithdrawsValue +
-        this.claimedFeesValue +
-        this.openBalanceValue +
-        this.unclaimedFeesValue,
+        this.totalFeesValue +
+        this.openBalanceValue,
     );
   }
 }

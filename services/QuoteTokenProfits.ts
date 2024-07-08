@@ -9,6 +9,8 @@ export interface CumulativeProfitDataPoint {
 
 export interface TokenProfitDataPoint {
   Symbol: string;
+  Fees: number;
+  "Divergence Loss": number;
   "Total Profit": number;
 }
 
@@ -17,7 +19,10 @@ export default class QuoteTokenProfit {
   pairGroupProfits: PairGroupProfits[];
   pairGroupCount!: number;
   positionCount!: number;
+  transactionCount!: number;
   totalProfit!: number;
+  totalFees!: number;
+  divergenceLoss: number;
   cumulativeProfit: CumulativeProfitDataPoint[] = [];
   tokenProfit: TokenProfitDataPoint[];
 
@@ -37,6 +42,10 @@ export default class QuoteTokenProfit {
           summaryMethod: "sum",
           key: "positionCount",
         },
+        transactionCount: {
+          summaryMethod: "sum",
+          key: "transactionCount",
+        },
         totalProfit: {
           summaryMethod: "sum",
           key: "totalProfit",
@@ -44,9 +53,22 @@ export default class QuoteTokenProfit {
             Math.floor(value * 10 ** this.quoteToken.decimals) /
             10 ** this.quoteToken.decimals,
         },
+        totalFees: {
+          summaryMethod: "sum",
+          key: "totalFees",
+          postProcess: (value) =>
+            Math.floor(value * 10 ** this.quoteToken.decimals) /
+            10 ** this.quoteToken.decimals,
+        },
       },
       this,
     );
+
+    this.divergenceLoss =
+      Math.floor(
+        (this.totalProfit - this.totalFees) * 10 ** this.quoteToken.decimals,
+      ) /
+      10 ** this.quoteToken.decimals;
 
     const positions = pairGroupProfits
       .map((pairGroupSummary) => pairGroupSummary.positions)
@@ -80,6 +102,8 @@ export default class QuoteTokenProfit {
     this.tokenProfit = this.pairGroupProfits.map((pairGroup) => {
       return {
         Symbol: pairGroup.baseToken.symbol,
+        Fees: pairGroup.totalFees,
+        "Divergence Loss": pairGroup.divergenceLoss,
         "Total Profit": pairGroup.totalProfit,
       };
     });

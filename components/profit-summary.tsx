@@ -37,7 +37,23 @@ export const ProfitSummary = (props: {
                   </div>
                   <div className="">
                     <div className="columns-2">
-                      <div>Total Profit:</div>
+                      <div>Total Fees:</div>
+                      <div>
+                        {quoteTokenProfit.totalFees.toLocaleString(
+                          Intl.NumberFormat().resolvedOptions().locale,
+                        )}
+                      </div>
+                    </div>
+                    <div className="columns-2">
+                      <div>Div. Loss:</div>
+                      <div>
+                        {quoteTokenProfit.divergenceLoss.toLocaleString(
+                          Intl.NumberFormat().resolvedOptions().locale,
+                        )}
+                      </div>
+                    </div>
+                    <div className="columns-2">
+                      <div>Net Profit:</div>
                       <div>
                         {quoteTokenProfit.totalProfit.toLocaleString(
                           Intl.NumberFormat().resolvedOptions().locale,
@@ -46,11 +62,27 @@ export const ProfitSummary = (props: {
                     </div>
                     <div className="columns-2">
                       <div># of Tokens:</div>
-                      <div>{quoteTokenProfit.pairGroupCount}</div>
+                      <div>
+                        {quoteTokenProfit.pairGroupCount.toLocaleString(
+                          Intl.NumberFormat().resolvedOptions().locale,
+                        )}
+                      </div>
                     </div>
                     <div className="columns-2">
                       <div># of Positions:</div>
-                      <div>{quoteTokenProfit.positionCount}</div>
+                      <div>
+                        {quoteTokenProfit.positionCount.toLocaleString(
+                          Intl.NumberFormat().resolvedOptions().locale,
+                        )}
+                      </div>
+                    </div>
+                    <div className="columns-2">
+                      <div># of Txns:</div>
+                      <div>
+                        {quoteTokenProfit.transactionCount.toLocaleString(
+                          Intl.NumberFormat().resolvedOptions().locale,
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

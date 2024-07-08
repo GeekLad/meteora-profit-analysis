@@ -7,7 +7,10 @@ export default class PairGroupProfits {
   quoteToken: JupiterTokenListToken;
   positions: MeteoraPosition[];
   positionCount!: number;
+  transactionCount!: number;
   totalProfit!: number;
+  divergenceLoss!: number;
+  totalFees!: number;
 
   constructor(
     positions: MeteoraPosition[],
@@ -23,9 +26,28 @@ export default class PairGroupProfits {
         positionCount: {
           summaryMethod: "count",
         },
+        transactionCount: {
+          summaryMethod: "sum",
+          key: "transactionCount",
+        },
         totalProfit: {
           summaryMethod: "sum",
           key: "profitLossValue",
+          postProcess: (value) =>
+            Math.floor(value * 10 ** this.quoteToken.decimals) /
+            10 ** this.quoteToken.decimals,
+        },
+        totalFees: {
+          summaryMethod: "sum",
+          key: "totalFeesValue",
+          postProcess: (value) =>
+            Math.floor(value * 10 ** this.quoteToken.decimals) /
+            10 ** this.quoteToken.decimals,
+        },
+        divergenceLoss: {
+          summaryMethod: "sum",
+          expression: (position) =>
+            position.profitLossValue - position.totalFeesValue,
           postProcess: (value) =>
             Math.floor(value * 10 ** this.quoteToken.decimals) /
             10 ** this.quoteToken.decimals,
