@@ -10,8 +10,12 @@ export interface CumulativeProfitDataPoint {
 export interface TokenProfitDataPoint {
   Symbol: string;
   Fees: number;
+  "Fees in USD": null | number;
+  "Rewards in USD": null | number;
   "Divergence Loss": number;
+  "Divergence Loss in USD": null | number;
   "Total Profit": number;
+  "Total Profit in USD": null | number;
 }
 
 export default class QuoteTokenProfit {
@@ -21,8 +25,12 @@ export default class QuoteTokenProfit {
   positionCount!: number;
   transactionCount!: number;
   totalProfit!: number;
+  usdTotalProfit: null | number = null;
   totalFees!: number;
+  usdTotalFees: null | number = null;
+  usdTotalRewards: null | number = null;
   divergenceLoss: number;
+  usdDivergenceLoss: null | number = null;
   cumulativeProfit: CumulativeProfitDataPoint[] = [];
   tokenProfit: TokenProfitDataPoint[];
 
@@ -103,8 +111,12 @@ export default class QuoteTokenProfit {
       return {
         Symbol: pairGroup.baseToken.symbol,
         Fees: pairGroup.totalFees,
+        "Fees in USD": null,
+        "Rewards in USD": null,
         "Divergence Loss": pairGroup.divergenceLoss,
+        "Divergence Loss in USD": null,
         "Total Profit": pairGroup.totalProfit,
+        "Total Profit in USD": null,
       };
     });
   }

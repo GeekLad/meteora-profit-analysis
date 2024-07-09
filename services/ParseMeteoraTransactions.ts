@@ -124,6 +124,23 @@ export interface MeteoraPositionTransaction {
   activeBinId: null | number;
   price: null | number;
   priceIsEstimated: null | boolean;
+  usdPrice: null | number;
+  usdMintXBalanceChange: null | number;
+  usdMintYBalanceChange: null | number;
+  usdBalanceChangeValue: null | number;
+  usdMintXFeesClaimed: null | number;
+  usdMintYFeesClaimed: null | number;
+  usdClaimedFeesValue: null | number;
+  usdReward1BalanceChange: null | number;
+  usdReward2BalanceChange: null | number;
+  usdMintXOpenBalance: null | number;
+  usdMintYOpenBalance: null | number;
+  usdOpenBalanceValue: null | number;
+  usdMintXUnclaimedFees: null | number;
+  usdMintYUnclaimedFees: null | number;
+  usdUnclaimedFeesValue: null | number;
+  usdReward1UnclaimedBalance: null | number;
+  usdReward2UnclaimedBalance: null | number;
 }
 
 function getMeteoraInstructions(tx: ParsedTransactionWithMeta) {
@@ -426,6 +443,23 @@ function getMeteoraPositionTransactionsFromInstructions(
       activeBinId: null,
       price: null,
       priceIsEstimated: null,
+      usdPrice: null,
+      usdMintXBalanceChange: null,
+      usdMintYBalanceChange: null,
+      usdBalanceChangeValue: null,
+      usdMintXOpenBalance: null,
+      usdMintYOpenBalance: null,
+      usdOpenBalanceValue: null,
+      usdMintXUnclaimedFees: null,
+      usdMintYUnclaimedFees: null,
+      usdUnclaimedFeesValue: null,
+      usdMintXFeesClaimed: null,
+      usdMintYFeesClaimed: null,
+      usdClaimedFeesValue: null,
+      usdReward1BalanceChange: null,
+      usdReward2BalanceChange: null,
+      usdReward1UnclaimedBalance: null,
+      usdReward2UnclaimedBalance: null,
     };
 
     positionIntructions.forEach((instruction) => {

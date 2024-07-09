@@ -9,8 +9,12 @@ export default class PairGroupProfits {
   positionCount!: number;
   transactionCount!: number;
   totalProfit!: number;
+  usdTotalProfit: null | number = null;
   divergenceLoss!: number;
+  usdDivergenceLoss: null | number = null;
   totalFees!: number;
+  usdTotalFees: null | number = null;
+  usdTotalRewards: null | number = null;
 
   constructor(
     positions: MeteoraPosition[],

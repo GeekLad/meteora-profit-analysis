@@ -214,38 +214,63 @@ export class MeteoraPosition {
   closeTimestampMs = 0;
   totalXDeposits = 0;
   totalYDeposits = 0;
+  usdTotalXDeposits: null | number = null;
+  usdTotalYDeposits: null | number = null;
   totalOpenXBalance = 0;
   totalOpenYBalance = 0;
+  usdTotalOpenXBalance: null | number = null;
+  usdTotalOpenYBalance: null | number = null;
   depositCount = 0;
   totalXWithdraws = 0;
   totalYWithdraws = 0;
+  usdTotalXWithdraws: null | number = null;
+  usdTotalYWithdraws: null | number = null;
   withdrawCount = 0;
   netXDepositsAndWithdraws = 0;
   netYDepositsAndWithdraws = 0;
+  usdNetXDepositsAndWithdraws: null | number = null;
+  usdNetYDepositsAndWithdraws: null | number = null;
   totalXFees = 0;
   totalYFees = 0;
+  usdTotalXFees: null | number = null;
+  usdTotalYFees: null | number = null;
   totalUnclaimedXFees = 0;
   totalUnclaimedYFees = 0;
+  usdTotalUnclaimedXFees: null | number = null;
+  usdTotalUnclaimedYFees: null | number = null;
   feeClaimCount = 0;
   totalReward1 = 0;
   totalReward2 = 0;
+  usdTotalReward1: null | number = null;
+  usdTotalReward2: null | number = null;
   rewardClaimClount = 0;
-  totalXOut = 0;
-  totalYOut = 0;
-  netXChange = 0;
-  netYChange = 0;
   inverted: boolean;
   isOneSided = false;
   hasNoIl = false;
   hasNoFees = false;
   depositsValue = 0;
+  usdDepositsValue: null | number = null;
   withdrawsValue = 0;
+  usdWithdrawsValue: null | number = null;
   netDepositsAndWithdrawsValue = 0;
+  usdNetDepositsAndWithdrawsValue: null | number = null;
   openBalanceValue = 0;
+  usdOpenBalanceValue: null | number = null;
   claimedFeesValue = 0;
+  usdClaimedFeesValue: null | number = null;
   unclaimedFeesValue = 0;
+  usdUnclaimedFeesValue: null | number = null;
   totalFeesValue = 0;
+  usdTotalFeesValue: null | number = null;
   profitLossValue = 0;
+  usdProfitLossValue: null | number = null;
+
+  // usdOpenBalanceValue: null,
+  // usdUnclaimedFeesValue: null,
+  // usdBalanceChangeValue: null,
+  // usdClaimedFeesValue: null,
+  // usdReward1BalanceChange: null,
+  // usdReward2BalanceChange: null,
 
   constructor(transactions: MeteoraPositionTransaction[]) {
     if (!hasSinglePosition(transactions)) {
@@ -404,10 +429,6 @@ export class MeteoraPosition {
     this.netYDepositsAndWithdraws = this.floorY(
       this.totalYDeposits + this.totalYWithdraws,
     );
-    this.totalXOut = this.floorX(this.totalXWithdraws + this.totalXFees);
-    this.totalYOut = this.floorY(this.totalYWithdraws + this.totalYFees);
-    this.netXChange = this.floorX(this.totalXOut + this.totalXDeposits);
-    this.netYChange = this.floorY(this.totalYOut + this.totalYDeposits);
     this.isOneSided = this.totalXDeposits == 0 || this.totalYDeposits == 0;
     this.hasNoIl =
       this.isOneSided &&
