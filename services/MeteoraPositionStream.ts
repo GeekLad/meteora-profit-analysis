@@ -64,9 +64,10 @@ export class MeteoraPositionStream extends Transform {
     walletAddress: string,
     before?: string,
     until?: string,
+    minDate?: Date,
   ) {
     super({ objectMode: true });
-    this._init(connection, walletAddress, before, until);
+    this._init(connection, walletAddress, before, until, minDate);
   }
 
   private async _init(
@@ -74,13 +75,20 @@ export class MeteoraPositionStream extends Transform {
     walletAddress: string,
     before?: string,
     until?: string,
+    minDate?: Date,
   ) {
     const { pairs } = await getDlmmPairs();
 
     this._pairs = pairs;
     this._tokenList = await getJupiterTokenList();
 
-    new ParsedTransactionStream(connection, walletAddress, before, until)
+    new ParsedTransactionStream(
+      connection,
+      walletAddress,
+      before,
+      until,
+      minDate,
+    )
       .on("data", (data) => this._parseTransactions(connection, data))
       .on("end", () => {
         this._receivedAllTransactions = true;

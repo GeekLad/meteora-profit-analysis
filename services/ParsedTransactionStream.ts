@@ -44,10 +44,11 @@ export class ParsedTransactionStream extends Transform {
     walletAddress: string,
     before?: string,
     until?: string,
+    minDate?: Date,
   ) {
     super({ objectMode: true });
     this._connection = connection;
-    new SignatureStream(connection, walletAddress, before, until)
+    new SignatureStream(connection, walletAddress, before, until, minDate)
       .on("data", (signatures: ConfirmedSignatureInfo[]) =>
         this._processSignatures(signatures),
       )

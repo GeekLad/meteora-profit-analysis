@@ -17,23 +17,27 @@ export class SignatureStream extends Transform {
   private _walletAddress: PublicKey;
   private _before?: string;
   private _until?: string;
+  private _minDate?: Date;
 
   constructor(
     connection: Connection,
     walletAddress: string,
     before?: string,
     until?: string,
+    minDate?: Date,
   ) {
     super({ objectMode: true });
     this._connection = connection;
     this._walletAddress = new PublicKey(walletAddress);
     this._before = before;
     this._until = until;
+    this._minDate = minDate;
     this._streamSignatures().catch((error) => this.emit("error", error));
   }
 
   private async _streamSignatures() {
     let newSignatures: ConfirmedSignatureInfo[] = [];
+    let lastDate = new Date();
 
     do {
       newSignatures = await this._connection.getConfirmedSignaturesForAddress2(
@@ -53,8 +57,14 @@ export class SignatureStream extends Transform {
           this.push(validSignatures);
         }
         this._before = newSignatures[newSignatures.length - 1].signature;
+        lastDate = new Date(
+          validSignatures[validSignatures.length - 1].blockTime! * 1000,
+        );
       }
-    } while (newSignatures.length > 0);
+    } while (
+      newSignatures.length > 0 &&
+      (!this._minDate || (this._minDate && lastDate > this._minDate))
+    );
     this.push(null);
   }
 
