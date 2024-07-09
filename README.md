@@ -3,9 +3,7 @@
 Inspired by the work I did on the
 [Meteora Discord Bot](https://github.com/GeekLad/meteora-discord-bot),
 I decided to develop a web application to look at the total profitability of
-a wallet. This tool depends heaviliy on the
-[Meteora Web API](https://dlmm-api.meteora.ag/swagger-ui/) to obtain data on
-positions as well as the deposits & withdrawals made on those positions.
+a wallet.
 
 ## Try it Live on GitHub Pages
 
