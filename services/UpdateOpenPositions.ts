@@ -4,6 +4,7 @@ import DLMM, { type LbPosition } from "@meteora-ag/dlmm";
 import { PublicKey, type Connection } from "@solana/web3.js";
 
 import { unique } from "./util";
+import { getPrices } from "./JupiterPriceApi";
 
 function createDlmms(connection: Connection, pairAddresses: string[]) {
   const pubKeys = pairAddresses.map(
@@ -71,10 +72,6 @@ function updateOpenPosition(
     price * lastDeposit.mintXUnclaimedFees + lastDeposit.mintYUnclaimedFees,
   );
   lastDeposit.timestamp_ms = new Date().getTime();
-
-  openPosition.summarizeTransactions();
-  openPosition.calcTotals();
-  openPosition.calcPrices();
 }
 
 async function updateOpenPositionsWithDlmmPools(
@@ -102,6 +99,41 @@ async function updateOpenPositionsWithDlmmPools(
   });
 }
 
+async function updateUsdValues(openPositions: MeteoraPosition[]) {
+  const uniqueMints = openPositions
+    .map((position) => [position.mintX, position.mintY])
+    .flat()
+    .filter((address) => address != null);
+
+  const priceMap = await getPrices(uniqueMints);
+
+  openPositions.forEach((position) => {
+    const tokenXUsdPrice = priceMap.get(position.mintX)?.price;
+    const tokenYUsdPrice = priceMap.get(position.mintY)?.price;
+
+    if (tokenXUsdPrice && tokenYUsdPrice) {
+      const transactions = position.transactions.filter(
+        (transaction) => transaction.add,
+      );
+
+      if (transactions.length > 0) {
+        const lastAdd = transactions[transactions.length - 1];
+
+        lastAdd.usdMintXOpenBalance = lastAdd.mintXOpenBalance * tokenXUsdPrice;
+        lastAdd.usdMintYOpenBalance = lastAdd.mintYOpenBalance * tokenYUsdPrice;
+        lastAdd.usdOpenBalanceValue =
+          lastAdd.usdMintXOpenBalance + lastAdd.usdMintYOpenBalance;
+        lastAdd.usdMintXUnclaimedFees =
+          lastAdd.mintXUnclaimedFees * tokenXUsdPrice;
+        lastAdd.usdMintYUnclaimedFees =
+          lastAdd.mintYUnclaimedFees * tokenYUsdPrice;
+        lastAdd.usdUnclaimedFeesValue =
+          lastAdd.usdMintXUnclaimedFees + lastAdd.usdMintYUnclaimedFees;
+      }
+    }
+  });
+}
+
 export async function updateOpenPositions(
   connection: Connection,
   positions: MeteoraPosition[],
@@ -119,5 +151,7 @@ export async function updateOpenPositions(
         updateOpenPositionsWithDlmmPools(pool, openPositions),
       ),
     );
+    await updateUsdValues(openPositions);
+    openPositions.forEach((position) => position.updateValues(true));
   }
 }
