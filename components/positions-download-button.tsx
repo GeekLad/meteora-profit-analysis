@@ -29,6 +29,7 @@ export const PositionsDownloadButton = (props: {
       "hasNoFees",
       "hasNoIl",
       "inverted",
+      "hasApiError",
       "depositsValue",
       "withdrawsValue",
       "openBalanceValue",
@@ -37,6 +38,8 @@ export const PositionsDownloadButton = (props: {
       "unclaimedFeesValue",
       "totalFeesValue",
       "profitLossValue",
+      "usdNetDepositsAndWithdrawsValue",
+      "usdClaimedFeesValue",
     ]);
   };
 

@@ -40,6 +40,8 @@ export const TransactionsDownloadButton = (props: {
       "claimedFeesValue",
       "unclaimedFeesValue",
       "totalFeesValue",
+      "usdBalanceChangeValue",
+      "usdClaimedFeesValue",
     ]);
   };
 
