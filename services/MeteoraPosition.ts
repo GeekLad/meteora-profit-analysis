@@ -228,16 +228,19 @@ export class MeteoraPosition {
   withdrawCount = 0;
   netXDepositsAndWithdraws = 0;
   netYDepositsAndWithdraws = 0;
-  usdNetXDepositsAndWithdraws: null | number = null;
-  usdNetYDepositsAndWithdraws: null | number = null;
-  totalXFees = 0;
-  totalYFees = 0;
-  usdTotalXFees: null | number = null;
-  usdTotalYFees: null | number = null;
+  totalClaimedXFees = 0;
+  totalClaimedYFees = 0;
+  totalClaimedFeesValue = 0;
+  usdClaimedXFees: null | number = null;
+  usdClaimedYFees: null | number = null;
   totalUnclaimedXFees = 0;
   totalUnclaimedYFees = 0;
   usdTotalUnclaimedXFees: null | number = null;
   usdTotalUnclaimedYFees: null | number = null;
+  totalXFees = 0;
+  totalYFees = 0;
+  usdTotalXFees: null | number = null;
+  usdTotalYFees: null | number = null;
   feeClaimCount = 0;
   totalReward1 = 0;
   totalReward2 = 0;
@@ -249,28 +252,22 @@ export class MeteoraPosition {
   hasNoIl = false;
   hasNoFees = false;
   depositsValue = 0;
+  hasApiError: null | boolean = null;
   usdDepositsValue: null | number = null;
   withdrawsValue = 0;
   usdWithdrawsValue: null | number = null;
   netDepositsAndWithdrawsValue = 0;
   usdNetDepositsAndWithdrawsValue: null | number = null;
   openBalanceValue = 0;
-  usdOpenBalanceValue: null | number = null;
   claimedFeesValue = 0;
-  usdClaimedFeesValue: null | number = null;
   unclaimedFeesValue = 0;
-  usdUnclaimedFeesValue: null | number = null;
   totalFeesValue = 0;
-  usdTotalFeesValue: null | number = null;
   profitLossValue = 0;
+  usdOpenBalanceValue: null | number = null;
+  usdClaimedFeesValue: null | number = null;
+  usdUnclaimedFeesValue: null | number = null;
+  usdTotalFeesValue: null | number = null;
   usdProfitLossValue: null | number = null;
-
-  // usdOpenBalanceValue: null,
-  // usdUnclaimedFeesValue: null,
-  // usdBalanceChangeValue: null,
-  // usdClaimedFeesValue: null,
-  // usdReward1BalanceChange: null,
-  // usdReward2BalanceChange: null,
 
   constructor(transactions: MeteoraPositionTransaction[]) {
     if (!hasSinglePosition(transactions)) {
@@ -314,9 +311,7 @@ export class MeteoraPosition {
       .reduce((final, current) => final || current);
     this.transactions = transactions.sort(meteoraPositionTransactionSorter);
     this.inverted = transactions[0].isInverted;
-    this.summarizeTransactions();
-    this.calcTotals();
-    this.calcPrices();
+    this.updateValues();
   }
 
   floorX(num: number): number {
@@ -329,6 +324,15 @@ export class MeteoraPosition {
     return (
       Math.floor(num * 10 ** this.mintYDecimals) / 10 ** this.mintYDecimals
     );
+  }
+
+  updateValues(calcUsd = false) {
+    this.summarizeTransactions();
+    this.calcTotals();
+    this.calcPrices();
+    if (calcUsd) {
+      this.calcUsd();
+    }
   }
 
   summarizeTransactions() {
@@ -385,15 +389,13 @@ export class MeteoraPosition {
           summaryMethod: "count",
           filter: (transaction) => transaction.claim,
         },
-        totalXFees: {
+        totalClaimedXFees: {
           key: "mintXFeesClaimed",
           summaryMethod: "sum",
-          filter: (transaction) => transaction.claim,
         },
-        totalYFees: {
+        totalClaimedYFees: {
           key: "mintYFeesClaimed",
           summaryMethod: "sum",
-          filter: (transaction) => transaction.claim,
         },
         totalUnclaimedXFees: {
           key: "mintXUnclaimedFees",
@@ -428,6 +430,12 @@ export class MeteoraPosition {
     );
     this.netYDepositsAndWithdraws = this.floorY(
       this.totalYDeposits + this.totalYWithdraws,
+    );
+    this.totalXFees = this.floorX(
+      this.totalClaimedXFees + this.totalUnclaimedXFees,
+    );
+    this.totalYFees = this.floorX(
+      this.totalClaimedYFees + this.totalUnclaimedYFees,
     );
     this.isOneSided = this.totalXDeposits == 0 || this.totalYDeposits == 0;
     this.hasNoIl =
@@ -485,5 +493,85 @@ export class MeteoraPosition {
         this.totalFeesValue +
         this.openBalanceValue,
     );
+  }
+
+  calcUsd() {
+    if (!this.hasApiError) {
+      summarize(
+        this.transactions,
+        {
+          usdTotalXDeposits: {
+            summaryMethod: "sum",
+            key: "usdMintXBalanceChange",
+            filter: (transaction) => transaction.add,
+          },
+          usdTotalYDeposits: {
+            summaryMethod: "sum",
+            key: "usdMintYBalanceChange",
+            filter: (transaction) => transaction.add,
+          },
+          usdTotalXWithdraws: {
+            summaryMethod: "sum",
+            key: "usdMintXBalanceChange",
+            filter: (transaction) => transaction.remove,
+          },
+          usdTotalYWithdraws: {
+            summaryMethod: "sum",
+            key: "usdMintYBalanceChange",
+            filter: (transaction) => transaction.remove,
+          },
+          usdTotalOpenXBalance: {
+            summaryMethod: "sum",
+            key: "usdMintXOpenBalance",
+          },
+          usdTotalOpenYBalance: {
+            summaryMethod: "sum",
+            key: "usdMintYOpenBalance",
+          },
+          usdClaimedXFees: {
+            summaryMethod: "sum",
+            key: "usdMintXFeesClaimed",
+          },
+          usdClaimedYFees: {
+            summaryMethod: "sum",
+            key: "usdMintYFeesClaimed",
+          },
+          usdTotalUnclaimedXFees: {
+            summaryMethod: "sum",
+            key: "usdMintXUnclaimedFees",
+          },
+          usdTotalUnclaimedYFees: {
+            summaryMethod: "sum",
+            key: "usdMintYUnclaimedFees",
+          },
+          usdTotalReward1: {
+            summaryMethod: "sum",
+            key: "usdReward1BalanceChange",
+          },
+          usdTotalReward2: {
+            summaryMethod: "sum",
+            key: "usdReward2BalanceChange",
+          },
+        },
+        this,
+      );
+      this.usdDepositsValue = this.usdTotalXDeposits! + this.usdTotalYDeposits!;
+      this.usdWithdrawsValue =
+        this.usdTotalXWithdraws! + this.usdTotalYWithdraws!;
+      this.usdClaimedFeesValue = this.usdClaimedXFees! + this.usdClaimedYFees!;
+      this.usdUnclaimedFeesValue =
+        this.usdTotalUnclaimedXFees! + this.usdTotalUnclaimedYFees!;
+      this.usdTotalXFees = this.usdClaimedXFees! + this.usdTotalUnclaimedXFees!;
+      this.usdTotalYFees = this.usdClaimedYFees! + this.usdTotalUnclaimedYFees!;
+      this.usdTotalFeesValue = this.usdTotalXFees + this.usdTotalYFees;
+      this.usdNetDepositsAndWithdrawsValue =
+        this.usdDepositsValue + this.usdWithdrawsValue;
+      this.usdOpenBalanceValue =
+        this.usdTotalOpenXBalance! + this.usdTotalOpenYBalance!;
+      this.usdProfitLossValue =
+        this.usdNetDepositsAndWithdrawsValue +
+        this.usdTotalFeesValue +
+        this.usdOpenBalanceValue;
+    }
   }
 }
