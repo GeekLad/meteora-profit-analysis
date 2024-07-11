@@ -22,6 +22,10 @@ export async function multiFetch(urls: string[]): Promise<UnifiedResponse[]> {
   return Promise.all(urls.map((url) => fetch(url)));
 }
 
+export async function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 class ThrottledCachedRequest<RequestParams extends any[], Response> {
   private _requestQueue: Map<string, Array<(response: Response) => void>> =
     new Map();
