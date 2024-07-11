@@ -33,7 +33,7 @@ type MeteoraPositionInstruction =
   | "RemoveLiquidity"
   | "closePosition";
 
-type MeteoraPositionAction =
+export type MeteoraPositionAction =
   | "open"
   | "add"
   | "claim"
@@ -124,6 +124,7 @@ export interface MeteoraPositionTransaction {
   activeBinId: null | number;
   price: null | number;
   priceIsEstimated: null | boolean;
+  hasApiError: null | boolean;
   usdPrice: null | number;
   usdMintXBalanceChange: null | number;
   usdMintYBalanceChange: null | number;
@@ -443,6 +444,7 @@ function getMeteoraPositionTransactionsFromInstructions(
       activeBinId: null,
       price: null,
       priceIsEstimated: null,
+      hasApiError: null,
       usdPrice: null,
       usdMintXBalanceChange: null,
       usdMintYBalanceChange: null,
