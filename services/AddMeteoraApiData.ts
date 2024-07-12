@@ -60,10 +60,8 @@ export async function addMeteoraApiData(position: MeteoraPosition) {
     .map((tx) => tx.hasApiError)
     .reduce((final, current) => final || current);
 
-  // TODO: Get Open Position Prices
-
   if (!position.hasApiError) {
-    position.updateValues();
+    position.updateValues(true);
   }
 }
 
