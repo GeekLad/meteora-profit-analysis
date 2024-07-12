@@ -81,7 +81,7 @@ export const getDlmmPairs = cachedRequest(
 );
 
 export const THROTTLE_METEORA_DETAIL_API = pThrottle({
-  limit: 3,
+  limit: 4,
   interval: 1000,
   strict: true,
 });
