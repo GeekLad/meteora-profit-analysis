@@ -1,11 +1,12 @@
-import type {
+import {
   AccountMeta,
+  Connection,
+  ParsedAccountData,
   ParsedInstruction,
   ParsedTransactionWithMeta,
   PartiallyDecodedInstruction,
   PublicKey,
 } from "@solana/web3.js";
-
 import {
   BorshEventCoder,
   BorshInstructionCoder,
@@ -410,198 +411,239 @@ function decodeMeteoraInstruction(
   );
 }
 
-function getMeteoraPositionTransactionsFromInstructions(
+function addSyntheticToken(
+  mint: string,
+  decimals: number,
+  tokenMap: Map<string, JupiterTokenListToken>,
+) {
+  const newToken: JupiterTokenListToken = {
+    address: mint,
+    chainId: 0,
+    decimals,
+    name: mint,
+    symbol: mint,
+    tags: [],
+  };
+
+  tokenMap.set(mint, newToken);
+
+  return newToken;
+}
+
+async function getSyntheticToken(
+  connection: Connection,
+  mint: string,
+  tokenMap: Map<string, JupiterTokenListToken>,
+) {
+  const mintAccountInfo = await connection.getParsedAccountInfo(
+    new PublicKey(mint),
+  );
+  const mintData = mintAccountInfo.value!.data as ParsedAccountData;
+  const decimals = mintData.parsed.info.decimals as number;
+
+  return addSyntheticToken(mint, decimals, tokenMap);
+}
+
+async function getMeteoraPositionTransactionsFromInstructions(
+  connection: Connection,
   pairs: Map<string, MeteoraDlmmPair>,
-  tokenList: Map<string, JupiterTokenListToken>,
+  tokenMap: Map<string, JupiterTokenListToken>,
   tx: ParsedTransactionWithMeta,
   instructions: MeteoraInstructionInfo[],
-): MeteoraPositionTransaction[] {
+): Promise<MeteoraPositionTransaction[]> {
   const uniquePositions = unique(
     instructions.map((instruction) => instruction.position),
   );
 
-  return uniquePositions.map((position) => {
-    const positionIntructions = instructions.filter(
-      (instruction) => instruction.position == position,
-    );
+  return Promise.all(
+    uniquePositions.map(async (position) => {
+      const positionIntructions = instructions.filter(
+        (instruction) => instruction.position == position,
+      );
 
-    const { timestamp_ms, slot, signature, lbPair, sender } =
-      positionIntructions[0];
+      const { timestamp_ms, slot, signature, lbPair, sender } =
+        positionIntructions[0];
 
-    const pair = pairs.get(lbPair)!;
-    const tokenX = tokenList.get(pair.mint_x)!;
-    const tokenY = tokenList.get(pair.mint_y)!;
-    const pairName = pair.name;
-    const mintX = pair.mint_x;
-    const mintY = pair.mint_y;
-    const mintXDecimals = tokenX.decimals;
-    const mintYDecimals = tokenY.decimals;
-    const reward1Mint =
-      pair.reward_mint_x == "11111111111111111111111111111111"
-        ? null
-        : pair.reward_mint_x;
-    const reward2Mint =
-      pair.reward_mint_y == "11111111111111111111111111111111"
-        ? null
-        : pair.reward_mint_y;
-    const symbolX = tokenX.symbol;
-    const symbolY = tokenY.symbol;
-    const symbolReward1 =
-      reward1Mint == null
-        ? null
-        : tokenList.get(pair.reward_mint_x)?.symbol ?? pair.reward_mint_x;
-    const symbolReward2 =
-      reward2Mint == null
-        ? null
-        : tokenList.get(pair.reward_mint_y)?.symbol ?? pair.reward_mint_y;
+      const pair = pairs.get(lbPair)!;
+      const tokenX =
+        tokenMap.get(pair.mint_x) ??
+        (await getSyntheticToken(connection, pair.mint_x, tokenMap));
+      const tokenY =
+        tokenMap.get(pair.mint_y) ??
+        (await getSyntheticToken(connection, pair.mint_y, tokenMap));
+      const pairName = pair.name;
+      const mintX = pair.mint_x;
+      const mintY = pair.mint_y;
+      const mintXDecimals = tokenX.decimals;
+      const mintYDecimals = tokenY.decimals;
+      const reward1Mint =
+        pair.reward_mint_x == "11111111111111111111111111111111"
+          ? null
+          : pair.reward_mint_x;
+      const reward2Mint =
+        pair.reward_mint_y == "11111111111111111111111111111111"
+          ? null
+          : pair.reward_mint_y;
+      const symbolX = tokenX?.symbol ?? mintX;
+      const symbolY = tokenY?.symbol ?? mintY;
+      const symbolReward1 =
+        reward1Mint == null
+          ? null
+          : tokenMap.get(pair.reward_mint_x)?.symbol ?? pair.reward_mint_x;
+      const symbolReward2 =
+        reward2Mint == null
+          ? null
+          : tokenMap.get(pair.reward_mint_y)?.symbol ?? pair.reward_mint_y;
 
-    const transaction: MeteoraPositionTransaction = {
-      timestamp_ms,
-      slot,
-      signature,
-      position,
-      lbPair,
-      sender,
-      pairName,
-      open: false,
-      add: false,
-      claim: false,
-      reward: false,
-      remove: false,
-      close: false,
-      mintX,
-      mintY,
-      mintXDecimals,
-      mintYDecimals,
-      reward1Mint,
-      reward2Mint,
-      symbolX,
-      symbolY,
-      symbolReward1,
-      symbolReward2,
-      mintXBalanceChange: 0,
-      mintYBalanceChange: 0,
-      mintXOpenBalance: 0,
-      mintYOpenBalance: 0,
-      openBalanceValue: 0,
-      balanceChangeValue: 0,
-      mintXFeesClaimed: 0,
-      mintYFeesClaimed: 0,
-      mintXUnclaimedFees: 0,
-      mintYUnclaimedFees: 0,
-      unclaimedFeesValue: 0,
-      claimedFeesValue: 0,
-      totalFeesValue: 0,
-      reward1BalanceChange: 0,
-      reward2BalanceChange: 0,
-      reward1UnclaimedBalance: 0,
-      reward2UnclaimedBalance: 0,
-      isInverted: false,
-      isHawksight: isHawksightTransaction(tx),
-      activeBinId: null,
-      price: null,
-      priceIsEstimated: null,
-      hasApiError: null,
-      usdPrice: null,
-      usdMintXBalanceChange: null,
-      usdMintYBalanceChange: null,
-      usdBalanceChangeValue: null,
-      usdMintXOpenBalance: null,
-      usdMintYOpenBalance: null,
-      usdOpenBalanceValue: null,
-      usdMintXUnclaimedFees: null,
-      usdMintYUnclaimedFees: null,
-      usdUnclaimedFeesValue: null,
-      usdMintXFeesClaimed: null,
-      usdMintYFeesClaimed: null,
-      usdClaimedFeesValue: null,
-      usdReward1BalanceChange: null,
-      usdReward2BalanceChange: null,
-      usdReward1UnclaimedBalance: null,
-      usdReward2UnclaimedBalance: null,
-    };
+      const transaction: MeteoraPositionTransaction = {
+        timestamp_ms,
+        slot,
+        signature,
+        position,
+        lbPair,
+        sender,
+        pairName,
+        open: false,
+        add: false,
+        claim: false,
+        reward: false,
+        remove: false,
+        close: false,
+        mintX,
+        mintY,
+        mintXDecimals,
+        mintYDecimals,
+        reward1Mint,
+        reward2Mint,
+        symbolX,
+        symbolY,
+        symbolReward1,
+        symbolReward2,
+        mintXBalanceChange: 0,
+        mintYBalanceChange: 0,
+        mintXOpenBalance: 0,
+        mintYOpenBalance: 0,
+        openBalanceValue: 0,
+        balanceChangeValue: 0,
+        mintXFeesClaimed: 0,
+        mintYFeesClaimed: 0,
+        mintXUnclaimedFees: 0,
+        mintYUnclaimedFees: 0,
+        unclaimedFeesValue: 0,
+        claimedFeesValue: 0,
+        totalFeesValue: 0,
+        reward1BalanceChange: 0,
+        reward2BalanceChange: 0,
+        reward1UnclaimedBalance: 0,
+        reward2UnclaimedBalance: 0,
+        isInverted: false,
+        isHawksight: isHawksightTransaction(tx),
+        activeBinId: null,
+        price: null,
+        priceIsEstimated: null,
+        hasApiError: null,
+        usdPrice: null,
+        usdMintXBalanceChange: null,
+        usdMintYBalanceChange: null,
+        usdBalanceChangeValue: null,
+        usdMintXOpenBalance: null,
+        usdMintYOpenBalance: null,
+        usdOpenBalanceValue: null,
+        usdMintXUnclaimedFees: null,
+        usdMintYUnclaimedFees: null,
+        usdUnclaimedFeesValue: null,
+        usdMintXFeesClaimed: null,
+        usdMintYFeesClaimed: null,
+        usdClaimedFeesValue: null,
+        usdReward1BalanceChange: null,
+        usdReward2BalanceChange: null,
+        usdReward1UnclaimedBalance: null,
+        usdReward2UnclaimedBalance: null,
+      };
 
-    positionIntructions.forEach((instruction) => {
-      transaction.activeBinId =
-        transaction.activeBinId ?? instruction.activeBinId;
-      const instructionType = instruction.type;
+      positionIntructions.forEach((instruction) => {
+        transaction.activeBinId =
+          transaction.activeBinId ?? instruction.activeBinId;
+        const instructionType = instruction.type;
 
-      switch (instructionType) {
-        case "add":
-          instruction.tokenTransfers.forEach((transfer) => {
-            transaction.mintXBalanceChange +=
-              transfer.mint == mintX ? -transfer.amount : 0;
-            transaction.mintYBalanceChange +=
-              transfer.mint == mintY ? -transfer.amount : 0;
-          });
-          break;
+        switch (instructionType) {
+          case "add":
+            instruction.tokenTransfers.forEach((transfer) => {
+              transaction.mintXBalanceChange +=
+                transfer.mint == mintX ? -transfer.amount : 0;
+              transaction.mintYBalanceChange +=
+                transfer.mint == mintY ? -transfer.amount : 0;
+            });
+            break;
 
-        case "remove":
-          instruction.tokenTransfers.forEach((transfer) => {
-            transaction.mintXBalanceChange +=
-              transfer.mint == mintX ? transfer.amount : 0;
-            transaction.mintYBalanceChange +=
-              transfer.mint == mintY ? transfer.amount : 0;
-          });
-          break;
+          case "remove":
+            instruction.tokenTransfers.forEach((transfer) => {
+              transaction.mintXBalanceChange +=
+                transfer.mint == mintX ? transfer.amount : 0;
+              transaction.mintYBalanceChange +=
+                transfer.mint == mintY ? transfer.amount : 0;
+            });
+            break;
 
-        case "claim":
-          instruction.tokenTransfers.forEach((transfer) => {
-            transaction.mintXFeesClaimed +=
-              transfer.mint == mintX ? transfer.amount : 0;
-            transaction.mintYFeesClaimed +=
-              transfer.mint == mintY ? transfer.amount : 0;
-          });
-          break;
+          case "claim":
+            instruction.tokenTransfers.forEach((transfer) => {
+              transaction.mintXFeesClaimed +=
+                transfer.mint == mintX ? transfer.amount : 0;
+              transaction.mintYFeesClaimed +=
+                transfer.mint == mintY ? transfer.amount : 0;
+            });
+            break;
 
-        case "reward":
-          instruction.tokenTransfers.forEach((transfer) => {
-            transaction.reward1BalanceChange +=
-              transfer.mint == reward1Mint ? transfer.amount : 0;
-            transaction.reward2BalanceChange +=
-              transfer.mint == reward2Mint ? transfer.amount : 0;
-          });
-          break;
+          case "reward":
+            instruction.tokenTransfers.forEach((transfer) => {
+              transaction.reward1BalanceChange +=
+                transfer.mint == reward1Mint ? transfer.amount : 0;
+              transaction.reward2BalanceChange +=
+                transfer.mint == reward2Mint ? transfer.amount : 0;
+            });
+            break;
+        }
+
+        transaction.open = transaction.open || instructionType == "open";
+        transaction.add = transaction.add || instructionType == "add";
+        transaction.claim = transaction.claim || instructionType == "claim";
+        transaction.reward = transaction.reward || instructionType == "reward";
+        transaction.remove = transaction.remove || instructionType == "remove";
+        transaction.close = transaction.close || instructionType == "close";
+      });
+      if (transaction.activeBinId !== null) {
+        transaction.price =
+          getPriceOfBinByBinId(
+            transaction.activeBinId,
+            pair.bin_step,
+          ).toNumber() *
+          10 ** (mintXDecimals - mintYDecimals);
+        transaction.balanceChangeValue =
+          transaction.price * transaction.mintXBalanceChange +
+          transaction.mintYBalanceChange;
+        transaction.balanceChangeValue =
+          Math.floor(transaction.balanceChangeValue * 10 ** mintYDecimals) /
+          10 ** mintYDecimals;
+        transaction.claimedFeesValue =
+          transaction.price * transaction.mintXFeesClaimed +
+          transaction.mintYFeesClaimed;
+        transaction.claimedFeesValue =
+          Math.floor(transaction.claimedFeesValue * 10 ** mintYDecimals) /
+          10 ** mintYDecimals;
+        transaction.priceIsEstimated = false;
       }
 
-      transaction.open = transaction.open || instructionType == "open";
-      transaction.add = transaction.add || instructionType == "add";
-      transaction.claim = transaction.claim || instructionType == "claim";
-      transaction.reward = transaction.reward || instructionType == "reward";
-      transaction.remove = transaction.remove || instructionType == "remove";
-      transaction.close = transaction.close || instructionType == "close";
-    });
-    if (transaction.activeBinId !== null) {
-      transaction.price =
-        getPriceOfBinByBinId(
-          transaction.activeBinId,
-          pair.bin_step,
-        ).toNumber() *
-        10 ** (tokenX.decimals - tokenY.decimals);
-      transaction.balanceChangeValue =
-        transaction.price * transaction.mintXBalanceChange +
-        transaction.mintYBalanceChange;
-      transaction.balanceChangeValue =
-        Math.floor(transaction.balanceChangeValue * 10 ** tokenY.decimals) /
-        10 ** tokenY.decimals;
-      transaction.claimedFeesValue =
-        transaction.price * transaction.mintXFeesClaimed +
-        transaction.mintYFeesClaimed;
-      transaction.claimedFeesValue =
-        Math.floor(transaction.claimedFeesValue * 10 ** tokenY.decimals) /
-        10 ** tokenY.decimals;
-      transaction.priceIsEstimated = false;
-    }
-
-    return transaction;
-  });
+      return transaction;
+    }),
+  );
 }
 
-export function parseMeteoraTransactions(
+export async function parseMeteoraTransactions(
+  connection: Connection,
   pairs: Map<string, MeteoraDlmmPair>,
   tokenList: Map<string, JupiterTokenListToken>,
   transaction: ParsedTransactionWithMeta,
-): MeteoraPositionTransaction[] {
+): Promise<MeteoraPositionTransaction[]> {
   const meteoraInstructions = getMeteoraInstructions(transaction);
 
   if (meteoraInstructions.length > 0) {
@@ -613,6 +655,7 @@ export function parseMeteoraTransactions(
 
     if (decodedInstructions.length > 0) {
       return getMeteoraPositionTransactionsFromInstructions(
+        connection,
         pairs,
         tokenList,
         transaction,

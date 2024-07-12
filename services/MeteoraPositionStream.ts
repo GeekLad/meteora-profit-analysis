@@ -96,7 +96,7 @@ export class MeteoraPositionStream extends Transform {
       .on("error", (error) => this.emit("error", error));
   }
 
-  private _parseTransactions(
+  private async _parseTransactions(
     connection: Connection,
     data: ParsedTransactionStreamData,
   ) {
@@ -114,7 +114,8 @@ export class MeteoraPositionStream extends Transform {
       return this._updateOpenPositions(connection);
     }
 
-    const positionTransactions = parseMeteoraTransactions(
+    const positionTransactions = await parseMeteoraTransactions(
+      connection,
       this._pairs,
       this._tokenList,
       data.parsedTransactionWithMeta,
