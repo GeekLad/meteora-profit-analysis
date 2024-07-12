@@ -53,21 +53,13 @@ function updateOpenPosition(
       : userPosition.positionData.feeX.toNumber()) /
     10 ** mintYDecimals;
 
-  lastDeposit.mintXOpenBalance = openPosition.floorX(
-    openPosition.totalXWithdraws + xAmount,
-  );
-  lastDeposit.mintYOpenBalance = openPosition.floorY(
-    openPosition.totalYWithdraws + yAmount,
-  );
+  lastDeposit.mintXOpenBalance = openPosition.floorX(xAmount);
+  lastDeposit.mintYOpenBalance = openPosition.floorY(yAmount);
   lastDeposit.openBalanceValue = openPosition.floorY(
     price * lastDeposit.mintXOpenBalance + lastDeposit.mintYOpenBalance,
   );
-  lastDeposit.mintXUnclaimedFees = openPosition.floorX(
-    openPosition.totalXFees + xFee,
-  );
-  lastDeposit.mintYUnclaimedFees = openPosition.floorY(
-    openPosition.totalYFees + yFee,
-  );
+  lastDeposit.mintXUnclaimedFees = openPosition.floorX(xFee);
+  lastDeposit.mintYUnclaimedFees = openPosition.floorY(yFee);
   lastDeposit.unclaimedFeesValue = openPosition.floorY(
     price * lastDeposit.mintXUnclaimedFees + lastDeposit.mintYUnclaimedFees,
   );
