@@ -17,7 +17,7 @@ export const HawksightSelector = (props: {
   hidden?: boolean;
   positions: MeteoraPosition[];
   selectedItem?: HawksightSelectorItem;
-  onFilter: (hakwsight: HawksightSelectorItem) => any;
+  onFilter: (selection: HawksightSelectorItem) => any;
 }) => {
   const selectedItem = props.selectedItem
     ? props.selectedItem
