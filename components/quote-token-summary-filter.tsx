@@ -8,6 +8,10 @@ import { TokenSelector } from "./token-selector";
 import { PositionsDownloadButton } from "./positions-download-button";
 import { TransactionsDownloadButton } from "./transactions-download-button";
 import { HawksightSelector, HawksightSelectorItem } from "./hawksight-selector";
+import {
+  OpenPositionSelector,
+  OpenPositionSelectorItem,
+} from "./open-position-selector";
 
 import {
   MeteoraPosition,
@@ -43,9 +47,14 @@ export const QuoteTokenSummaryFilter = (props: {
   const [hawksightSelection, setHawksightSelection] = useState(
     "allpositions" as HawksightSelectorItem,
   );
+  const [openPositionSelection, setOpenPositionSelection] = useState(
+    "allpositions" as OpenPositionSelectorItem,
+  );
   const [dateFilteredPositions, setDateFilteredPositions] = useState(
     props.positionLoadingState.positions,
   );
+  const [openPositionFilteredPositions, setOpenPositionFilteredPositions] =
+    useState(props.positionLoadingState.positions);
   const [quoteFilteredPositions, setQuoteFilteredPositions] = useState(
     props.positionLoadingState.positions,
   );
@@ -69,16 +78,39 @@ export const QuoteTokenSummaryFilter = (props: {
   }
 
   function resetFilters() {
+    setOpenPositionSelection("allpositions");
     setSelectedQuoteTokens("all");
     setSelectedBaseTokens("all");
     setHawksightSelection("allpositions");
-    applyAllFilters(defaultStart, defaultEnd, "all", "all", "allpositions");
+    applyAllFilters(
+      defaultStart,
+      defaultEnd,
+      "allpositions",
+      "all",
+      "all",
+      "allpositions",
+    );
   }
 
   function applyDateFilter(newStart: number, newEnd: number) {
     applyAllFilters(
       newStart,
       newEnd,
+      openPositionSelection,
+      selectedQuoteTokens,
+      selectedBaseTokens,
+      hawksightSelection,
+    );
+  }
+
+  function applyOpenPositionFilter(
+    newOpenPositionSelection: OpenPositionSelectorItem,
+  ) {
+    setOpenPositionSelection(newOpenPositionSelection);
+    applyAllFilters(
+      props.dates.start,
+      props.dates.end,
+      newOpenPositionSelection,
       selectedQuoteTokens,
       selectedBaseTokens,
       hawksightSelection,
@@ -90,6 +122,7 @@ export const QuoteTokenSummaryFilter = (props: {
     applyAllFilters(
       props.dates.start,
       props.dates.end,
+      openPositionSelection,
       newSelectedTokens,
       selectedBaseTokens,
       hawksightSelection,
@@ -101,6 +134,7 @@ export const QuoteTokenSummaryFilter = (props: {
     applyAllFilters(
       props.dates.start,
       props.dates.end,
+      openPositionSelection,
       selectedQuoteTokens,
       newSelectedTokens,
       hawksightSelection,
@@ -112,6 +146,7 @@ export const QuoteTokenSummaryFilter = (props: {
     applyAllFilters(
       props.dates.start,
       props.dates.end,
+      openPositionSelection,
       selectedQuoteTokens,
       selectedBaseTokens,
       newHawksightSelection,
@@ -121,6 +156,7 @@ export const QuoteTokenSummaryFilter = (props: {
   function applyAllFilters(
     newStart: number,
     newEnd: number,
+    newOpenPositionSelection: OpenPositionSelectorItem,
     newSelectedQuoteTokens: Selection,
     newSelectedBaseTokens: Selection,
     newHawksightSelection: HawksightSelectorItem,
@@ -133,11 +169,20 @@ export const QuoteTokenSummaryFilter = (props: {
 
     setDateFilteredPositions(dateFilteredPositions);
 
+    const openPositionFilteredPositions =
+      newOpenPositionSelection == "allpositions"
+        ? dateFilteredPositions
+        : newOpenPositionSelection == "closed"
+          ? dateFilteredPositions.filter((position) => position.isClosed)
+          : dateFilteredPositions.filter((position) => !position.isClosed);
+
+    setOpenPositionFilteredPositions(openPositionFilteredPositions);
+
     const quoteFilteredPositions =
       newSelectedQuoteTokens == "all"
-        ? dateFilteredPositions
+        ? openPositionFilteredPositions
         : filterPositionsByMintYAddress(
-            dateFilteredPositions,
+            openPositionFilteredPositions,
             Array.from(newSelectedQuoteTokens) as string[],
           );
 
@@ -170,7 +215,7 @@ export const QuoteTokenSummaryFilter = (props: {
   return (
     <div className="col-span-3">
       {props.expanded ? (
-        <div className="lg:grid grid-flow-cols grid-cols-7 items-end">
+        <div className="lg:grid grid-flow-cols grid-cols-8 items-end">
           <PositionDateRangePicker
             aria-label="Select Position Date Range"
             end={props.dates.end}
@@ -179,14 +224,25 @@ export const QuoteTokenSummaryFilter = (props: {
             start={props.dates.start}
             onFilter={(start, end) => applyDateFilter(start, end)}
           />
+
+          <OpenPositionSelector
+            hidden={!props.expanded}
+            positions={quoteFilteredPositions}
+            selectedItem={openPositionSelection}
+            onFilter={(newOpenPositionSelection) =>
+              applyOpenPositionFilter(newOpenPositionSelection)
+            }
+          />
+
           <TokenSelector
             aria-label="Select Quote Tokens"
             hidden={!props.expanded}
-            positions={dateFilteredPositions}
+            positions={openPositionFilteredPositions}
             selectedItems={selectedQuoteTokens}
             tokenMap={props.positionLoadingState.tokenMap}
             onFilter={(selectedTokens) => applyQuoteTokenFilter(selectedTokens)}
           />
+
           <TokenSelector
             aria-label="Select Base Tokens"
             baseTokenList={true}
@@ -197,6 +253,15 @@ export const QuoteTokenSummaryFilter = (props: {
             onFilter={(selectedTokens) => applyBaseTokenFilter(selectedTokens)}
           />
 
+          <HawksightSelector
+            hidden={!props.expanded}
+            positions={quoteFilteredPositions}
+            selectedItem={hawksightSelection}
+            onFilter={(newHawksightSelection) =>
+              applyHawksightFilter(newHawksightSelection)
+            }
+          />
+
           <Button
             aria-label="Reset Filters"
             className="m-4"
@@ -205,15 +270,6 @@ export const QuoteTokenSummaryFilter = (props: {
           >
             Reset Filters
           </Button>
-
-          <HawksightSelector
-            hidden={!props.expanded}
-            positions={quoteFilteredPositions}
-            selectedItem={hawksightSelection}
-            onFilter={(hawksightSelection) =>
-              applyHawksightFilter(hawksightSelection)
-            }
-          />
 
           <Button
             aria-label="Close Filters"
