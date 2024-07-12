@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Switch } from "@nextui-org/react";
+import { Button, Switch, Tooltip } from "@nextui-org/react";
 import { Selection } from "@react-types/shared";
 
 import { FilterIcon } from "./icons";
@@ -284,11 +284,11 @@ export const QuoteTokenSummaryFilter = (props: {
         <div className="md:grid md:mr-4 grid-flow-cols grid-cols-4 items-end">
           <TransactionsDownloadButton
             hidden={props.expanded}
-            transactions={props.positionLoadingState.transactions}
+            positionLoadingState={props.positionLoadingState}
           />
           <PositionsDownloadButton
             hidden={props.expanded}
-            positions={props.positionLoadingState.positions}
+            positionLoadingState={props.positionLoadingState}
           />
 
           <Button
@@ -301,14 +301,20 @@ export const QuoteTokenSummaryFilter = (props: {
             Filter Results
           </Button>
           <div className="m-4 flex w-full justify-end items-end">
-            <Switch
-              aria-label="Toggle USD"
-              className="mr-4"
-              isSelected={props.usd}
-              onClick={() => props.onUsdToggle()}
+            <Tooltip
+              color="warning"
+              content="Note: Data is missing, USD values are not fully loaded in yet"
+              isDisabled={props.positionLoadingState.apiDataLoaded}
             >
-              Show USD
-            </Switch>
+              <Switch
+                aria-label="Toggle USD"
+                className="mr-4"
+                isSelected={props.usd}
+                onClick={() => props.onUsdToggle()}
+              >
+                Show USD
+              </Switch>
+            </Tooltip>
           </div>
         </div>
       )}
