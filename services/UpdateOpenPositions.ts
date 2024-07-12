@@ -20,9 +20,7 @@ function updateOpenPosition(
   poolPrice: number,
 ) {
   const { mintXDecimals, mintYDecimals } = openPosition;
-  const deposits = openPosition.transactions.filter(
-    (position) => position.open,
-  );
+  const deposits = openPosition.transactions.filter((position) => position.add);
   const lastDeposit = deposits[deposits.length - 1];
   const price =
     (openPosition.inverted ? 1 / poolPrice : poolPrice) *

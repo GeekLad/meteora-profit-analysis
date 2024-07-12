@@ -41,6 +41,8 @@ export const PositionsDownloadButton = (props: {
       "profitLossValue",
       "usdNetDepositsAndWithdrawsValue",
       "usdClaimedFeesValue",
+      "usdOpenBalanceValue",
+      "usdUnclaimedFeesValue",
     ]);
   };
 
