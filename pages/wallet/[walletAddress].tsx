@@ -13,6 +13,7 @@ import {
   JupiterTokenListToken,
   getJupiterTokenList,
 } from "@/services/JupiterTokenList";
+import { UsdMeteoraPositionStream } from "@/services/UsdMeteoraPositionStream";
 
 export interface PositionLoadingState {
   startTime: number;
@@ -24,10 +25,16 @@ export interface PositionLoadingState {
   allSignaturesFound: boolean;
   allPositionsFound: boolean;
   updatingOpenPositions: boolean;
-  done: boolean;
+  rpcDataLoaded: boolean;
+  apiDataLoaded: boolean;
   transactions: MeteoraPositionTransaction[];
   positions: MeteoraPosition[];
   tokenMap: Map<string, JupiterTokenListToken>;
+  updatingUsdValues: boolean;
+  updatedUsdValueCount: number;
+  updatedUsdPercent: number;
+  usdUpdateStartTime: number;
+  estimatedCompletionString: string;
 }
 
 export default function IndexPage() {
@@ -40,10 +47,16 @@ export default function IndexPage() {
     allSignaturesFound: false,
     allPositionsFound: false,
     updatingOpenPositions: false,
-    done: false,
+    rpcDataLoaded: false,
+    apiDataLoaded: false,
     transactions: [],
     positions: [],
     tokenMap: new Map(),
+    updatingUsdValues: false,
+    updatedUsdValueCount: 0,
+    updatedUsdPercent: 0,
+    usdUpdateStartTime: 0,
+    estimatedCompletionString: "",
   };
 
   const appState = useContext(AppState);
@@ -58,6 +71,19 @@ export default function IndexPage() {
     currentState.durationString = getDurationString(
       new Date().getTime() - currentState.startTime,
     );
+
+    if (currentState.updatedUsdPercent > 0) {
+      if (currentState.updatedUsdPercent < 0.05) {
+        currentState.estimatedCompletionString = "";
+      } else {
+        const elapsedMs =
+          new Date().getTime() - currentState.usdUpdateStartTime;
+        const eta =
+          elapsedMs / (currentState.updatedUsdPercent / 100) - elapsedMs;
+
+        currentState.estimatedCompletionString = getDurationString(eta);
+      }
+    }
 
     return { ...currentState };
   }
@@ -118,10 +144,13 @@ export default function IndexPage() {
 
           case "positionsAndTransactions":
             setPositionLoadingState((currentState) => {
-              currentState.done = true;
+              currentState.allPositionsFound = true;
+              currentState.rpcDataLoaded = true;
               currentState.updatingOpenPositions = false;
               currentState.transactions = data.transactions;
               currentState.positions = data.positions;
+
+              loadApiData(data.positions);
 
               return updateElapsedTime(currentState);
             });
@@ -129,6 +158,40 @@ export default function IndexPage() {
         }
       });
     }
+  }
+
+  async function loadApiData(positions: MeteoraPosition[]) {
+    setPositionLoadingState((currentState) => {
+      currentState.usdUpdateStartTime = new Date().getTime();
+      currentState.updatingUsdValues = true;
+
+      return updateElapsedTime(currentState);
+    });
+
+    new UsdMeteoraPositionStream(positions)
+      .on("data", (data) => {
+        setPositionLoadingState((currentState) => {
+          const oldPosition = currentState.positions.find(
+            (position) => position.position == data.updatedPosition.position,
+          )!;
+          const index = currentState.positions.indexOf(oldPosition);
+
+          currentState.positions[index] = data.updatedPosition;
+          currentState.updatedUsdValueCount = data.updatedPositionCount;
+
+          currentState.updatedUsdPercent =
+            (100 * data.updatedPositionCount) / positions.length;
+
+          return updateElapsedTime(currentState);
+        });
+      })
+      .on("end", () => {
+        setPositionLoadingState((currentState) => {
+          currentState.apiDataLoaded = true;
+
+          return updateElapsedTime(currentState);
+        });
+      });
   }
 
   useEffect(() => {

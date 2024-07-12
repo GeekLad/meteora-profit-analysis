@@ -1,7 +1,11 @@
 import { Card, CardBody, Image } from "@nextui-org/react";
 
-import { ProfitBarChart } from "./profit-bar-chart";
-import { ProfitTimeSeries } from "./profit-time-series";
+import { QuoteProfitBarChart } from "./quote-profit-bar-chart";
+import { QuoteProfitTimeSeries } from "./quote-profit-time-series";
+import { QuoteSummaryStats } from "./quote-summary-stats";
+import { UsdProfitBarChart } from "./usd-profit-bar-chart";
+import { UsdProfitTimeSeries } from "./usd-profit-time-series";
+import { UsdSummaryStats } from "./usd-summary-stats";
 
 import { MeteoraPosition } from "@/services/MeteoraPosition";
 import { JupiterTokenListToken } from "@/services/JupiterTokenList";
@@ -9,6 +13,7 @@ import WalletProfits from "@/services/WalletProfits";
 
 export const ProfitSummary = (props: {
   hidden?: boolean;
+  usd: boolean;
   positions: MeteoraPosition[];
   tokenMap: Map<string, JupiterTokenListToken>;
 }) => {
@@ -35,59 +40,23 @@ export const ProfitSummary = (props: {
                       {quoteTokenProfit.quoteToken.symbol}
                     </div>
                   </div>
-                  <div className="">
-                    <div className="columns-2">
-                      <div>Total Fees:</div>
-                      <div>
-                        {quoteTokenProfit.totalFees.toLocaleString(
-                          Intl.NumberFormat().resolvedOptions().locale,
-                        )}
-                      </div>
-                    </div>
-                    <div className="columns-2">
-                      <div>Div. Loss:</div>
-                      <div>
-                        {quoteTokenProfit.divergenceLoss.toLocaleString(
-                          Intl.NumberFormat().resolvedOptions().locale,
-                        )}
-                      </div>
-                    </div>
-                    <div className="columns-2">
-                      <div>Net Profit:</div>
-                      <div>
-                        {quoteTokenProfit.totalProfit.toLocaleString(
-                          Intl.NumberFormat().resolvedOptions().locale,
-                        )}
-                      </div>
-                    </div>
-                    <div className="columns-2">
-                      <div># of Tokens:</div>
-                      <div>
-                        {quoteTokenProfit.pairGroupCount.toLocaleString(
-                          Intl.NumberFormat().resolvedOptions().locale,
-                        )}
-                      </div>
-                    </div>
-                    <div className="columns-2">
-                      <div># of Positions:</div>
-                      <div>
-                        {quoteTokenProfit.positionCount.toLocaleString(
-                          Intl.NumberFormat().resolvedOptions().locale,
-                        )}
-                      </div>
-                    </div>
-                    <div className="columns-2">
-                      <div># of Txns:</div>
-                      <div>
-                        {quoteTokenProfit.transactionCount.toLocaleString(
-                          Intl.NumberFormat().resolvedOptions().locale,
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  {!props.usd ? (
+                    <QuoteSummaryStats quoteTokenProfit={quoteTokenProfit} />
+                  ) : (
+                    <UsdSummaryStats quoteTokenProfit={quoteTokenProfit} />
+                  )}
                 </div>
-                <ProfitTimeSeries quoteTokenProfit={quoteTokenProfit} />
-                <ProfitBarChart quoteTokenProfit={quoteTokenProfit} />
+                {props.usd ? (
+                  <UsdProfitTimeSeries quoteTokenProfit={quoteTokenProfit} />
+                ) : (
+                  <QuoteProfitTimeSeries quoteTokenProfit={quoteTokenProfit} />
+                )}
+
+                {props.usd ? (
+                  <UsdProfitBarChart quoteTokenProfit={quoteTokenProfit} />
+                ) : (
+                  <QuoteProfitBarChart quoteTokenProfit={quoteTokenProfit} />
+                )}
               </div>
             </CardBody>
           </Card>

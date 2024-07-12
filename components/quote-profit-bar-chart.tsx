@@ -19,6 +19,7 @@ const ProfitTooltip: ContentType<ValueType, NameType> = (props) => {
   if (props.active && props.payload && props.payload.length) {
     const {
       Fees: fees,
+      "Quote Symbol": quote,
       "Divergence Loss": divergence,
       "Total Profit": profit,
     } = props.payload[0].payload;
@@ -26,9 +27,15 @@ const ProfitTooltip: ContentType<ValueType, NameType> = (props) => {
     return (
       <div className="bg-white text-black">
         <p className="font-bold">{props.label}</p>
-        <p>Fees: {fees}</p>
-        <p>Divergence Loss: {divergence}</p>
-        <p className="font-bold">Net Profit: {profit}</p>
+        <p>
+          Fees: {fees} {quote}
+        </p>
+        <p>
+          Divergence Loss: {divergence} {quote}
+        </p>
+        <p className="font-bold">
+          Net Profit: {profit} {quote}
+        </p>
       </div>
     );
   }
@@ -36,7 +43,7 @@ const ProfitTooltip: ContentType<ValueType, NameType> = (props) => {
   return null;
 };
 
-export const ProfitBarChart = (props: {
+export const QuoteProfitBarChart = (props: {
   quoteTokenProfit: QuoteTokenProfit;
 }) => {
   const data = props.quoteTokenProfit.tokenProfit.sort(
@@ -71,8 +78,6 @@ export const ProfitBarChart = (props: {
             labelStyle={{ color: "black" }}
           />
           <Bar dataKey="Total Profit" fill="rgb(37 99 235)" stackId="a" />
-          {/* <Bar dataKey="Divergence Loss" fill="rgb(190 18 60)" stackId="a" />
-          <Bar dataKey="Fees" fill="rgb(37 99 235)" stackId="a" /> */}
         </BarChart>
       </ResponsiveContainer>
     </div>
