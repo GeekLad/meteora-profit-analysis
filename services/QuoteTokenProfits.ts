@@ -5,6 +5,7 @@ import { summarize } from "./util";
 export interface CumulativeProfitDataPoint {
   "Position Close Date": string;
   "Cumulative Profit": number;
+  "Cumulative Profit in USD": number;
 }
 
 export interface TokenProfitDataPoint {
@@ -23,10 +24,13 @@ export default class QuoteTokenProfit {
   pairGroupProfits: PairGroupProfits[];
   pairGroupCount!: number;
   positionCount!: number;
+  positionCountWithApiErrors!: number;
   transactionCount!: number;
   totalProfit!: number;
+  profitMissingApiData!: number;
   usdTotalProfit: null | number = null;
   totalFees!: number;
+  feesMissingApiData!: number;
   usdTotalFees: null | number = null;
   usdTotalRewards: null | number = null;
   divergenceLoss: number;
@@ -50,6 +54,10 @@ export default class QuoteTokenProfit {
           summaryMethod: "sum",
           key: "positionCount",
         },
+        positionCountWithApiErrors: {
+          summaryMethod: "sum",
+          key: "positionCountWithApiErrors",
+        },
         transactionCount: {
           summaryMethod: "sum",
           key: "transactionCount",
@@ -61,12 +69,38 @@ export default class QuoteTokenProfit {
             Math.floor(value * 10 ** this.quoteToken.decimals) /
             10 ** this.quoteToken.decimals,
         },
+        profitMissingApiData: {
+          summaryMethod: "sum",
+          key: "profitMissingApiData",
+          postProcess: (value) =>
+            Math.floor(value * 10 ** this.quoteToken.decimals) /
+            10 ** this.quoteToken.decimals,
+        },
         totalFees: {
           summaryMethod: "sum",
           key: "totalFees",
           postProcess: (value) =>
             Math.floor(value * 10 ** this.quoteToken.decimals) /
             10 ** this.quoteToken.decimals,
+        },
+        feesMissingApiData: {
+          summaryMethod: "sum",
+          key: "feesMissingApiData",
+          postProcess: (value) =>
+            Math.floor(value * 10 ** this.quoteToken.decimals) /
+            10 ** this.quoteToken.decimals,
+        },
+        usdTotalProfit: {
+          summaryMethod: "sum",
+          key: "usdTotalProfit",
+        },
+        usdTotalFees: {
+          summaryMethod: "sum",
+          key: "usdTotalFees",
+        },
+        usdTotalRewards: {
+          summaryMethod: "sum",
+          key: "usdTotalRewards",
         },
       },
       this,
@@ -77,6 +111,8 @@ export default class QuoteTokenProfit {
         (this.totalProfit - this.totalFees) * 10 ** this.quoteToken.decimals,
       ) /
       10 ** this.quoteToken.decimals;
+    this.usdDivergenceLoss =
+      this.usdTotalProfit! - this.usdTotalFees! - this.usdTotalRewards!;
 
     const positions = pairGroupProfits
       .map((pairGroupSummary) => pairGroupSummary.positions)
@@ -90,6 +126,7 @@ export default class QuoteTokenProfit {
             position.closeTimestampMs,
           ).toLocaleDateString(),
           "Cumulative Profit": position.profitLossValue,
+          "Cumulative Profit in USD": Number(position.usdProfitLossValue),
         });
       } else {
         this.cumulativeProfit.push({
@@ -103,6 +140,9 @@ export default class QuoteTokenProfit {
                 10 ** this.quoteToken.decimals,
             ) /
             10 ** this.quoteToken.decimals,
+          "Cumulative Profit in USD":
+            this.cumulativeProfit[index - 1]["Cumulative Profit in USD"] +
+            Number(position.usdProfitLossValue),
         });
       }
     });
@@ -110,13 +150,14 @@ export default class QuoteTokenProfit {
     this.tokenProfit = this.pairGroupProfits.map((pairGroup) => {
       return {
         Symbol: pairGroup.baseToken.symbol,
+        "Quote Symbol": pairGroup.quoteToken.symbol,
         Fees: pairGroup.totalFees,
-        "Fees in USD": null,
-        "Rewards in USD": null,
+        "Fees in USD": pairGroup.usdTotalFees,
+        "Rewards in USD": pairGroup.usdTotalRewards,
         "Divergence Loss": pairGroup.divergenceLoss,
-        "Divergence Loss in USD": null,
+        "Divergence Loss in USD": pairGroup.usdDivergenceLoss,
         "Total Profit": pairGroup.totalProfit,
-        "Total Profit in USD": null,
+        "Total Profit in USD": pairGroup.usdTotalProfit,
       };
     });
   }

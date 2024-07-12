@@ -7,12 +7,15 @@ export default class PairGroupProfits {
   quoteToken: JupiterTokenListToken;
   positions: MeteoraPosition[];
   positionCount!: number;
+  positionCountWithApiErrors!: number;
   transactionCount!: number;
   totalProfit!: number;
+  profitMissingApiData!: number;
   usdTotalProfit: null | number = null;
   divergenceLoss!: number;
   usdDivergenceLoss: null | number = null;
   totalFees!: number;
+  feesMissingApiData!: number;
   usdTotalFees: null | number = null;
   usdTotalRewards: null | number = null;
 
@@ -30,6 +33,10 @@ export default class PairGroupProfits {
         positionCount: {
           summaryMethod: "count",
         },
+        positionCountWithApiErrors: {
+          summaryMethod: "count",
+          filter: (position) => position.hasApiError == true,
+        },
         transactionCount: {
           summaryMethod: "sum",
           key: "transactionCount",
@@ -41,9 +48,25 @@ export default class PairGroupProfits {
             Math.floor(value * 10 ** this.quoteToken.decimals) /
             10 ** this.quoteToken.decimals,
         },
+        profitMissingApiData: {
+          summaryMethod: "sum",
+          key: "profitLossValue",
+          filter: (position) => position.hasApiError == true,
+          postProcess: (value) =>
+            Math.floor(value * 10 ** this.quoteToken.decimals) /
+            10 ** this.quoteToken.decimals,
+        },
         totalFees: {
           summaryMethod: "sum",
           key: "totalFeesValue",
+          postProcess: (value) =>
+            Math.floor(value * 10 ** this.quoteToken.decimals) /
+            10 ** this.quoteToken.decimals,
+        },
+        feesMissingApiData: {
+          summaryMethod: "sum",
+          key: "totalFeesValue",
+          filter: (position) => position.hasApiError == true,
           postProcess: (value) =>
             Math.floor(value * 10 ** this.quoteToken.decimals) /
             10 ** this.quoteToken.decimals,
@@ -56,8 +79,23 @@ export default class PairGroupProfits {
             Math.floor(value * 10 ** this.quoteToken.decimals) /
             10 ** this.quoteToken.decimals,
         },
+        usdTotalProfit: {
+          summaryMethod: "sum",
+          key: "usdProfitLossValue",
+        },
+        usdTotalFees: {
+          summaryMethod: "sum",
+          key: "usdTotalFeesValue",
+        },
+        usdTotalRewards: {
+          summaryMethod: "sum",
+          expression: (position) =>
+            position.totalReward1 + position.totalReward2,
+        },
       },
       this,
     );
+    this.usdDivergenceLoss =
+      this.usdTotalProfit! - this.usdTotalFees! - this.usdTotalRewards!;
   }
 }
