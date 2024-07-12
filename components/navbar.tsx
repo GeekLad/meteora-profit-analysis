@@ -29,7 +29,7 @@ export const Navbar = () => {
         className="hidden sm:flex basis-1/5 sm:basis-full"
         justify="end"
       >
-        <NavbarItem className="hidden sm:flex gap-2 w-full">
+        <NavbarItem className="md:m-4 hidden sm:flex gap-2">
           <RpcInput />
           <ThemeSwitch />
         </NavbarItem>
