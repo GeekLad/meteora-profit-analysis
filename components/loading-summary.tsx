@@ -27,6 +27,17 @@ export const LoadingSummary = (props: {
   const positionsWithoutErrors = props.positionLoadingState.positions.filter(
     (position) => position.hasApiError === false,
   );
+  const usdDivergenceLoss =
+    positionsWithoutErrors.length == 0
+      ? 0
+      : positionsWithoutErrors
+          .map(
+            (position) =>
+              Number(position.usdNetDepositsAndWithdrawsValue) +
+              Number(position.usdOpenBalanceValue),
+          )
+          .reduce((total, current) => total + current);
+
   const usdProfit =
     positionsWithoutErrors.length == 0
       ? 0
@@ -56,7 +67,7 @@ export const LoadingSummary = (props: {
           />
           <LoadingItem
             loading={!props.positionLoadingState.allSignaturesFound}
-            title="# of Transactions Found"
+            title="# of Wallet Transactions"
             value={props.positionLoadingState.signatureCount}
           />
           <LoadingItem
@@ -64,16 +75,16 @@ export const LoadingSummary = (props: {
               !props.positionLoadingState.allPositionsFound &&
               !props.positionLoadingState.rpcDataLoaded
             }
-            title={
-              props.positionLoadingState.allPositionsFound
-                ? "# of Positions"
-                : "# of Position Transactions"
+            title={"# of Position Transactions"}
+            value={props.positionLoadingState.transactionCount}
+          />
+          <LoadingItem
+            loading={
+              !props.positionLoadingState.allPositionsFound &&
+              !props.positionLoadingState.rpcDataLoaded
             }
-            value={
-              props.positionLoadingState.allPositionsFound
-                ? props.positionLoadingState.positions.length
-                : props.positionLoadingState.transactionCount
-            }
+            title={"# of Positions"}
+            value={props.positionLoadingState.positions.length}
           />
           <LoadingItem
             hidden={
@@ -120,6 +131,19 @@ export const LoadingSummary = (props: {
             loading={!props.positionLoadingState.apiDataLoaded}
             title="Total Fees in USD"
             value={usdFeesAndRewards.toLocaleString(
+              Intl.NumberFormat().resolvedOptions().locale,
+              {
+                style: "currency",
+                currency: "USD",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              },
+            )}
+          />
+          <LoadingItem
+            loading={!props.positionLoadingState.apiDataLoaded}
+            title="Total Divergence Loss in USD"
+            value={usdDivergenceLoss.toLocaleString(
               Intl.NumberFormat().resolvedOptions().locale,
               {
                 style: "currency",
