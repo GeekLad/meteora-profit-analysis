@@ -28,13 +28,21 @@ const ProfitTooltip: ContentType<ValueType, NameType> = (props) => {
       <div className="bg-white text-black">
         <p className="font-bold">{props.label}</p>
         <p>
-          Fees: {fees} {quote}
+          Fees:{" "}
+          {fees.toLocaleString(Intl.NumberFormat().resolvedOptions().locale)}{" "}
+          {quote}
         </p>
         <p>
-          Divergence Loss: {divergence} {quote}
+          Divergence Loss:{" "}
+          {divergence.toLocaleString(
+            Intl.NumberFormat().resolvedOptions().locale,
+          )}{" "}
+          {quote}
         </p>
         <p className="font-bold">
-          Net Profit: {profit} {quote}
+          Net Profit:{" "}
+          {profit.toLocaleString(Intl.NumberFormat().resolvedOptions().locale)}{" "}
+          {quote}
         </p>
       </div>
     );
