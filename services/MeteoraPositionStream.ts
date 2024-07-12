@@ -145,15 +145,17 @@ export class MeteoraPositionStream extends Transform {
         this._transactions.map((transaction) => transaction.position),
       );
 
-      const positions = positionAddresses
-        .map((positionAddress) => {
-          const positionTransactions = this._transactions.filter(
-            (transaction) => transaction.position == positionAddress,
-          );
+      const allPositions = positionAddresses.map((positionAddress) => {
+        const positionTransactions = this._transactions.filter(
+          (transaction) => transaction.position == positionAddress,
+        );
 
-          return new MeteoraPosition(positionTransactions);
-        })
-        .filter((position) => position.depositsValue < 0);
+        return new MeteoraPosition(positionTransactions);
+      });
+
+      const positions = allPositions.filter(
+        (position) => position.depositsValue < 0,
+      );
 
       const openPositions = positions.filter((position) => !position.isClosed);
 

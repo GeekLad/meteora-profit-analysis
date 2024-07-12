@@ -33,14 +33,14 @@ function updateOpenPosition(
         ? userPosition.positionData.totalXAmount
         : userPosition.positionData.totalYAmount,
     ) /
-    10 ** openPosition.mintXDecimals;
+    10 ** mintXDecimals;
   const yAmount =
     Number(
       !openPosition.inverted
         ? userPosition.positionData.totalYAmount
         : userPosition.positionData.totalXAmount,
     ) /
-    10 ** openPosition.mintYDecimals;
+    10 ** mintYDecimals;
 
   const xFee =
     (!openPosition.inverted
@@ -74,13 +74,30 @@ function updateOpenPosition(
   lastDeposit.timestamp_ms = new Date().getTime();
 }
 
+async function getPositions(pool: DLMM, openPositions: MeteoraPosition[]) {
+  const uniqueSenders = unique(
+    openPositions.map((position) => position.sender),
+  );
+
+  const positionData = await Promise.all(
+    uniqueSenders.map((sender) =>
+      pool.getPositionsByUserAndLbPair(new PublicKey(sender)),
+    ),
+  );
+
+  const activeBin = positionData[0].activeBin;
+  const userPositions = positionData
+    .map((position) => position.userPositions)
+    .flat();
+
+  return { activeBin, userPositions };
+}
+
 async function updateOpenPositionsWithDlmmPools(
   pool: DLMM,
   openPositions: MeteoraPosition[],
 ) {
-  const { activeBin, userPositions } = await pool.getPositionsByUserAndLbPair(
-    new PublicKey(openPositions[0].sender),
-  );
+  const { activeBin, userPositions } = await getPositions(pool, openPositions);
   const poolPrice = Number(activeBin.price);
 
   userPositions.forEach((userPosition) => {

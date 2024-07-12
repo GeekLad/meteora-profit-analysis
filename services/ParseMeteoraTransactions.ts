@@ -19,6 +19,7 @@ import { type JupiterTokenListToken } from "./JupiterTokenList";
 import { unique } from "./util";
 
 const METEORA_PROGRAM_ID = "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo";
+const HAWKSIGHT_PROGRAM_ID = "FqGg2Y1FNxMiGd51Q6UETixQWkF5fB92MysbYogRJb3P";
 
 type MeteoraPositionInstruction =
   | "initializePosition"
@@ -121,6 +122,7 @@ export interface MeteoraPositionTransaction {
   reward1UnclaimedBalance: number;
   reward2UnclaimedBalance: number;
   isInverted: boolean;
+  isHawksight: boolean;
   activeBinId: null | number;
   price: null | number;
   priceIsEstimated: null | boolean;
@@ -145,9 +147,28 @@ export interface MeteoraPositionTransaction {
 }
 
 function getMeteoraInstructions(tx: ParsedTransactionWithMeta) {
-  return tx.transaction.message.instructions.filter(
+  const outerInstructions = tx.transaction.message.instructions.filter(
     (instruction) => instruction.programId.toBase58() == METEORA_PROGRAM_ID,
   ) as PartiallyDecodedInstruction[];
+
+  if (tx.meta?.innerInstructions) {
+    const innerInstructions = tx.meta.innerInstructions
+      .map((instruction) => instruction.instructions)
+      .flat()
+      .filter(
+        (instruction) => instruction.programId.toBase58() == METEORA_PROGRAM_ID,
+      ) as PartiallyDecodedInstruction[];
+
+    return outerInstructions.concat(innerInstructions);
+  }
+
+  return outerInstructions;
+}
+
+function isHawksightTransaction(tx: ParsedTransactionWithMeta) {
+  return tx.transaction.message.instructions.some(
+    (instruction) => instruction.programId.toBase58() == HAWKSIGHT_PROGRAM_ID,
+  );
 }
 
 function getAccountMetas(
@@ -188,7 +209,9 @@ function getPositionPairAndSender(
       (account) => account.name == "Lb Pair",
     )!;
     const lbPair = lbPairAccount.pubkey.toBase58();
-    const senderAccount = accounts.find((account) => account.name == "Sender")!;
+    const senderAccount = accounts.find(
+      (account) => account.name == "Sender" || account.name == "Owner",
+    )!;
     const sender = senderAccount.pubkey.toBase58();
 
     return {
@@ -202,7 +225,7 @@ function getPositionPairAndSender(
         return {
           position: accountMetas[1].pubkey.toBase58(),
           lbPair: accountMetas[2].pubkey.toBase58(),
-          sender: accountMetas[0].pubkey.toBase58(),
+          sender: accountMetas[3].pubkey.toBase58(),
         };
 
       case "addLiquidityOneSide":
@@ -327,6 +350,33 @@ function getMeteoraInstructionInfo(
   };
 }
 
+function getOuterInstructionIndex(
+  transaction: ParsedTransactionWithMeta,
+  instruction: PartiallyDecodedInstruction,
+) {
+  const outerIndex =
+    transaction.transaction.message.instructions.indexOf(instruction);
+
+  if (outerIndex != -1) {
+    return outerIndex;
+  }
+
+  if (transaction.meta?.innerInstructions) {
+    const outerInstruction = transaction.meta.innerInstructions.find(
+      (innerInstruction) =>
+        innerInstruction.instructions.find((i) => i == instruction),
+    );
+
+    if (outerInstruction) {
+      return outerInstruction.index;
+    }
+
+    return -1;
+  }
+
+  return -1;
+}
+
 function decodeMeteoraInstruction(
   transaction: ParsedTransactionWithMeta,
   instruction: PartiallyDecodedInstruction,
@@ -337,14 +387,19 @@ function decodeMeteoraInstruction(
   )!;
 
   if (
-    !METORA_POSITION_INSTRUCTIONS.includes(
-      decodedInstruction.name as MeteoraPositionInstruction,
-    )
+    !decodedInstruction ||
+    (decodedInstruction &&
+      !METORA_POSITION_INSTRUCTIONS.includes(
+        decodedInstruction.name as MeteoraPositionInstruction,
+      ))
   ) {
     return undefined;
   }
-  const index =
-    transaction.transaction.message.instructions.indexOf(instruction);
+  const index = getOuterInstructionIndex(transaction, instruction);
+
+  if (index == -1) {
+    return undefined;
+  }
   const accountMetas = getAccountMetas(transaction, instruction.accounts);
 
   return getMeteoraInstructionInfo(
@@ -358,6 +413,7 @@ function decodeMeteoraInstruction(
 function getMeteoraPositionTransactionsFromInstructions(
   pairs: Map<string, MeteoraDlmmPair>,
   tokenList: Map<string, JupiterTokenListToken>,
+  tx: ParsedTransactionWithMeta,
   instructions: MeteoraInstructionInfo[],
 ): MeteoraPositionTransaction[] {
   const uniquePositions = unique(
@@ -441,6 +497,7 @@ function getMeteoraPositionTransactionsFromInstructions(
       reward1UnclaimedBalance: 0,
       reward2UnclaimedBalance: 0,
       isInverted: false,
+      isHawksight: isHawksightTransaction(tx),
       activeBinId: null,
       price: null,
       priceIsEstimated: null,
@@ -558,6 +615,7 @@ export function parseMeteoraTransactions(
       return getMeteoraPositionTransactionsFromInstructions(
         pairs,
         tokenList,
+        transaction,
         decodedInstructions,
       );
     }

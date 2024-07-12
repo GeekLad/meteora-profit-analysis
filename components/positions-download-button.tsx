@@ -25,6 +25,7 @@ export const PositionsDownloadButton = (props: {
       "openTimestampMs",
       "closeTimestampMs",
       "isClosed",
+      "isHawksight",
       "isOneSided",
       "hasNoFees",
       "hasNoIl",

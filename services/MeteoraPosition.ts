@@ -208,6 +208,7 @@ export class MeteoraPosition {
   symbolReward1: null | string;
   symbolReward2: null | string;
   isClosed: boolean;
+  isHawksight: boolean;
   transactions: MeteoraPositionTransaction[] = [];
   transactionCount = 0;
   openTimestampMs = 0;
@@ -288,6 +289,7 @@ export class MeteoraPosition {
       reward2Mint,
       symbolX,
       symbolY,
+      isHawksight,
       symbolReward1,
       symbolReward2,
     } = transactions[0];
@@ -309,6 +311,7 @@ export class MeteoraPosition {
     this.isClosed = transactions
       .map((transaction) => transaction.close)
       .reduce((final, current) => final || current);
+    this.isHawksight = isHawksight;
     this.transactions = transactions.sort(meteoraPositionTransactionSorter);
     this.inverted = transactions[0].isInverted;
     this.updateValues();

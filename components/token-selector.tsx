@@ -51,7 +51,7 @@ export const TokenSelector = (props: {
     <div className="m-4">
       <Dropdown shouldBlockScroll={false}>
         <DropdownTrigger>
-          <Button className="w-full">
+          <Button className="lg:w-full">
             {props.baseTokenList ? "Base" : "Quote"} Tokens
           </Button>
         </DropdownTrigger>

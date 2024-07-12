@@ -2,7 +2,11 @@ import { useState } from "react";
 
 import { LoadingSummary } from "./loading-summary";
 import { ProfitSummary } from "./profit-summary";
-import { QuoteTokenSummaryFilter } from "./quote-token-summary-filter";
+import {
+  defaultEnd,
+  defaultStart,
+  QuoteTokenSummaryFilter,
+} from "./quote-token-summary-filter";
 
 import { MeteoraPosition } from "@/services/MeteoraPosition";
 import { PositionLoadingState } from "@/pages/wallet/[walletAddress]";
@@ -16,6 +20,10 @@ export const ProfitDisplay = (props: {
   const [filteredPositions, setFilteredPositions] = useState(
     props.positionLoadingState.positions,
   );
+  const [dates, setDates] = useState({
+    start: defaultStart,
+    end: defaultEnd,
+  });
   const [usd, setUsd] = useState(false);
 
   if (props.positionLoadingState.startTime == 0) {
@@ -27,8 +35,15 @@ export const ProfitDisplay = (props: {
     setFilteredPositions(props.positionLoadingState.positions);
   }
 
-  function filterPositions(filteredPositions: MeteoraPosition[]) {
-    setFilteredPositions(filteredPositions);
+  function filterPositions(data: {
+    dates: {
+      start: number;
+      end: number;
+    };
+    positions: MeteoraPosition[];
+  }) {
+    setDates(data.dates);
+    setFilteredPositions(data.positions);
   }
 
   return (
@@ -40,12 +55,13 @@ export const ProfitDisplay = (props: {
           usd={usd}
         />
         <QuoteTokenSummaryFilter
+          dates={dates}
           expanded={expanded}
           hidden={props.loading}
           positionLoadingState={props.positionLoadingState}
           usd={usd}
           onExpandToggle={(expanded) => setExpanded(expanded)}
-          onFilter={(positions) => filterPositions(positions)}
+          onFilter={(data) => filterPositions(data)}
           onUsdToggle={() => setUsd(!usd)}
         />
         <ProfitSummary

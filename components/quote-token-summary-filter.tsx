@@ -7,6 +7,7 @@ import { PositionDateRangePicker } from "./position-date-range-picker";
 import { TokenSelector } from "./token-selector";
 import { PositionsDownloadButton } from "./positions-download-button";
 import { TransactionsDownloadButton } from "./transactions-download-button";
+import { HawksightSelector, HawksightSelectorItem } from "./hawksight-selector";
 
 import {
   MeteoraPosition,
@@ -16,20 +17,32 @@ import {
 } from "@/services/MeteoraPosition";
 import { PositionLoadingState } from "@/pages/wallet/[walletAddress]";
 
+export const defaultStart = new Date("2023-11-06").getTime();
+export const defaultEnd = new Date().getTime() + 1000 * 60 * 60 * 24;
+
 export const QuoteTokenSummaryFilter = (props: {
   hidden?: boolean;
   positionLoadingState: PositionLoadingState;
   usd: boolean;
   expanded: boolean;
+  dates: {
+    start: number;
+    end: number;
+  };
   onExpandToggle: (expanded: boolean) => any;
   onUsdToggle: () => any;
-  onFilter: (filteredPositions: MeteoraPosition[]) => any;
+  onFilter: (filter: {
+    dates: {
+      start: number;
+      end: number;
+    };
+    positions: MeteoraPosition[];
+  }) => any;
 }) => {
-  const defaultStart = new Date("2023-11-06").getTime();
-  const defaultEnd = new Date().getTime() + 1000 * 60 * 60 * 24;
   const [initialized, setInitialized] = useState(false);
-  const [start, setStart] = useState(defaultStart);
-  const [end, setEnd] = useState(defaultEnd);
+  const [hawksightSelection, setHawksightSelection] = useState(
+    "allpositions" as HawksightSelectorItem,
+  );
   const [dateFilteredPositions, setDateFilteredPositions] = useState(
     props.positionLoadingState.positions,
   );
@@ -56,27 +69,53 @@ export const QuoteTokenSummaryFilter = (props: {
   }
 
   function resetFilters() {
-    setStart(defaultStart);
-    setEnd(defaultEnd);
     setSelectedQuoteTokens("all");
     setSelectedBaseTokens("all");
-    applyAllFilters(defaultStart, defaultEnd, "all", "all");
+    setHawksightSelection("allpositions");
+    applyAllFilters(defaultStart, defaultEnd, "all", "all", "allpositions");
   }
 
   function applyDateFilter(newStart: number, newEnd: number) {
-    setStart(newStart);
-    setEnd(newEnd);
-    applyAllFilters(newStart, newEnd, selectedQuoteTokens, selectedBaseTokens);
+    applyAllFilters(
+      newStart,
+      newEnd,
+      selectedQuoteTokens,
+      selectedBaseTokens,
+      hawksightSelection,
+    );
   }
 
   function applyQuoteTokenFilter(newSelectedTokens: Selection) {
     setSelectedQuoteTokens(newSelectedTokens);
-    applyAllFilters(start, end, newSelectedTokens, selectedBaseTokens);
+    applyAllFilters(
+      props.dates.start,
+      props.dates.end,
+      newSelectedTokens,
+      selectedBaseTokens,
+      hawksightSelection,
+    );
   }
 
   function applyBaseTokenFilter(newSelectedTokens: Selection) {
     setSelectedBaseTokens(newSelectedTokens);
-    applyAllFilters(start, end, selectedQuoteTokens, newSelectedTokens);
+    applyAllFilters(
+      props.dates.start,
+      props.dates.end,
+      selectedQuoteTokens,
+      newSelectedTokens,
+      hawksightSelection,
+    );
+  }
+
+  function applyHawksightFilter(newHawksightSelection: HawksightSelectorItem) {
+    setHawksightSelection(newHawksightSelection);
+    applyAllFilters(
+      props.dates.start,
+      props.dates.end,
+      selectedQuoteTokens,
+      selectedBaseTokens,
+      newHawksightSelection,
+    );
   }
 
   function applyAllFilters(
@@ -84,6 +123,7 @@ export const QuoteTokenSummaryFilter = (props: {
     newEnd: number,
     newSelectedQuoteTokens: Selection,
     newSelectedBaseTokens: Selection,
+    newHawksightSelection: HawksightSelectorItem,
   ) {
     const dateFilteredPositions = filterPositionsByTimeMs(
       props.positionLoadingState.positions,
@@ -111,19 +151,32 @@ export const QuoteTokenSummaryFilter = (props: {
             Array.from(newSelectedBaseTokens) as string[],
           );
 
-    props.onFilter(baseFilteredPositions);
+    const hawksightFilteredPositions =
+      newHawksightSelection == "allpositions"
+        ? baseFilteredPositions
+        : newHawksightSelection == "hawksightonly"
+          ? baseFilteredPositions.filter((position) => position.isHawksight)
+          : baseFilteredPositions.filter((position) => !position.isHawksight);
+
+    props.onFilter({
+      dates: {
+        start: newStart,
+        end: newEnd,
+      },
+      positions: hawksightFilteredPositions,
+    });
   }
 
   return (
     <div className="col-span-3">
       {props.expanded ? (
-        <div className="md:grid grid-flow-cols grid-cols-5 items-end">
+        <div className="lg:grid grid-flow-cols grid-cols-7 items-end">
           <PositionDateRangePicker
             aria-label="Select Position Date Range"
-            end={end}
+            end={props.dates.end}
             hidden={!props.expanded}
             positions={props.positionLoadingState.positions}
-            start={start}
+            start={props.dates.start}
             onFilter={(start, end) => applyDateFilter(start, end)}
           />
           <TokenSelector
@@ -143,6 +196,7 @@ export const QuoteTokenSummaryFilter = (props: {
             tokenMap={props.positionLoadingState.tokenMap}
             onFilter={(selectedTokens) => applyBaseTokenFilter(selectedTokens)}
           />
+
           <Button
             aria-label="Reset Filters"
             className="m-4"
@@ -151,6 +205,15 @@ export const QuoteTokenSummaryFilter = (props: {
           >
             Reset Filters
           </Button>
+
+          <HawksightSelector
+            hidden={!props.expanded}
+            positions={quoteFilteredPositions}
+            selectedItem={hawksightSelection}
+            onFilter={(hawksightSelection) =>
+              applyHawksightFilter(hawksightSelection)
+            }
+          />
 
           <Button
             aria-label="Close Filters"
