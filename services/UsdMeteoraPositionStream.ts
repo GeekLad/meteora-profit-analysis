@@ -24,7 +24,9 @@ export class UsdMeteoraPositionStream extends Transform {
 
   constructor(positions: MeteoraPosition[]) {
     super({ objectMode: true });
-    this._positions = positions;
+    this._positions = positions.sort(
+      (a, b) => b.openTimestampMs - a.openTimestampMs,
+    );
     this._init();
   }
 
