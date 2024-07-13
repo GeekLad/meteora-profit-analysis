@@ -20,7 +20,9 @@ export const Navbar = () => {
             <Logo />
           </Link>
           <Link href="/">
-            <p className="font-bold text-inherit">Meteora Profit Analysis</p>
+            <p className="font-bold text-inherit">
+              Meteora DLMM Profit Analysis
+            </p>
           </Link>
         </NavbarBrand>
       </NavbarContent>

@@ -44,6 +44,7 @@ export const TransactionsDownloadButton = (props: {
         "unclaimedFeesValue",
         "totalFeesValue",
         "usdBalanceChangeValue",
+        "hasApiError",
         "usdClaimedFeesValue",
         "usdOpenBalanceValue",
         "usdUnclaimedFeesValue",

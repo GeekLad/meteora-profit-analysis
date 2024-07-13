@@ -1,4 +1,4 @@
-# Meteora Profit Analysis
+# Meteora DLMM Profit Analysis
 
 Inspired by the work I did on the
 [Meteora Discord Bot](https://github.com/GeekLad/meteora-discord-bot),
