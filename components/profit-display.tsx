@@ -50,6 +50,7 @@ export const ProfitDisplay = (props: {
     <div>
       <div className="w-full">
         <LoadingSummary
+          filteredPositions={filteredPositions}
           loading={props.loading}
           positionLoadingState={props.positionLoadingState}
           usd={usd}

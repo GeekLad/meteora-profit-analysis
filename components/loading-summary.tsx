@@ -3,16 +3,25 @@ import { Card, CardBody, Progress } from "@nextui-org/react";
 import { LoadingItem } from "./loading-status-item";
 
 import { type PositionLoadingState } from "@/pages/wallet/[walletAddress]";
+import { MeteoraPosition } from "@/services/MeteoraPosition";
 
 export const LoadingSummary = (props: {
+  filteredPositions: MeteoraPosition[];
   loading: boolean;
   positionLoadingState: PositionLoadingState;
   usd: boolean;
 }) => {
+  const filteredTransactions = props.filteredPositions
+    .map((position) => position.transactions)
+    .flat();
+
+  const updatedUsdValueCount = props.filteredPositions.filter(
+    (position) => position.hasApiError !== null,
+  ).length;
   const usdFeesAndRewards =
-    props.positionLoadingState.transactions.length == 0
+    filteredTransactions.length == 0
       ? 0
-      : props.positionLoadingState.transactions
+      : filteredTransactions
           .map(
             (transaction) =>
               Number(transaction.usdClaimedFeesValue) +
@@ -24,7 +33,7 @@ export const LoadingSummary = (props: {
           )
           .reduce((total, current) => total + current);
   const estimatedPointsFromFeesAndRewards = usdFeesAndRewards * 1000;
-  const positionsWithoutErrors = props.positionLoadingState.positions.filter(
+  const positionsWithoutErrors = props.filteredPositions.filter(
     (position) => position.hasApiError === false,
   );
   const usdDivergenceLoss =
@@ -44,7 +53,7 @@ export const LoadingSummary = (props: {
       : positionsWithoutErrors
           .map((position) => Number(position.usdProfitLossValue))
           .reduce((total, current) => total + current);
-  const positionsWithErrorsCount = props.positionLoadingState.positions.filter(
+  const positionsWithErrorsCount = props.filteredPositions.filter(
     (position) => position.hasApiError,
   ).length;
 
@@ -76,7 +85,7 @@ export const LoadingSummary = (props: {
               !props.positionLoadingState.rpcDataLoaded
             }
             title={"# of Position Transactions"}
-            value={props.positionLoadingState.transactionCount}
+            value={filteredTransactions.length}
           />
           <LoadingItem
             loading={
@@ -84,7 +93,7 @@ export const LoadingSummary = (props: {
               !props.positionLoadingState.rpcDataLoaded
             }
             title={"# of Positions"}
-            value={props.positionLoadingState.positions.length}
+            value={props.filteredPositions.length}
           />
           <LoadingItem
             hidden={
@@ -97,7 +106,7 @@ export const LoadingSummary = (props: {
           <LoadingItem
             loading={!props.positionLoadingState.apiDataLoaded}
             title="# of Pos. updated w/ USD"
-            value={props.positionLoadingState.updatedUsdValueCount}
+            value={updatedUsdValueCount}
           />
           {props.positionLoadingState.apiDataLoaded ? (
             <></>
