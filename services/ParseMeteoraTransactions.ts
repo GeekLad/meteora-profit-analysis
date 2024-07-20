@@ -83,6 +83,7 @@ interface TokenTransferInfo {
 
 export interface MeteoraPositionTransaction {
   timestamp_ms: number;
+  timestamp: string;
   slot: number;
   signature: string;
   position: string;
@@ -464,6 +465,10 @@ async function getMeteoraPositionTransactionsFromInstructions(
       const { timestamp_ms, slot, signature, lbPair, sender } =
         positionIntructions[0];
 
+      const timestamp =
+        new Date(timestamp_ms).toLocaleDateString() +
+        " " +
+        new Date(timestamp_ms).toLocaleTimeString();
       const pair = pairs.get(lbPair);
 
       if (pair) {
@@ -499,6 +504,7 @@ async function getMeteoraPositionTransactionsFromInstructions(
 
         const transaction: MeteoraPositionTransaction = {
           timestamp_ms,
+          timestamp,
           slot,
           signature,
           position,

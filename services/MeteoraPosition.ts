@@ -212,6 +212,8 @@ export class MeteoraPosition {
   transactions: MeteoraPositionTransaction[] = [];
   transactionCount = 0;
   openTimestampMs = 0;
+  openTimestamp = "";
+  closeTimestamp = "";
   closeTimestampMs = 0;
   totalXDeposits = 0;
   totalYDeposits = 0;
@@ -250,7 +252,7 @@ export class MeteoraPosition {
   rewardClaimClount = 0;
   inverted: boolean;
   isOneSided = false;
-  hasNoIl = false;
+  hasNoImpermanentLoss = false;
   hasNoFees = false;
   depositsValue = 0;
   hasApiError: null | boolean = null;
@@ -425,6 +427,14 @@ export class MeteoraPosition {
       },
       this,
     );
+    this.openTimestamp =
+      new Date(this.openTimestampMs).toLocaleDateString() +
+      " " +
+      new Date(this.openTimestampMs).toLocaleTimeString();
+    this.closeTimestamp =
+      new Date(this.closeTimestampMs).toLocaleDateString() +
+      " " +
+      new Date(this.closeTimestampMs).toLocaleTimeString();
   }
 
   calcTotals() {
@@ -441,7 +451,7 @@ export class MeteoraPosition {
       this.totalClaimedYFees + this.totalUnclaimedYFees,
     );
     this.isOneSided = this.totalXDeposits == 0 || this.totalYDeposits == 0;
-    this.hasNoIl =
+    this.hasNoImpermanentLoss =
       this.isOneSided &&
       this.netXDepositsAndWithdraws >= 0 &&
       this.netYDepositsAndWithdraws >= 0;

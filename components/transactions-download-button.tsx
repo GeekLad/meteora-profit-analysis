@@ -18,7 +18,7 @@ export const TransactionsDownloadButton = (props: {
       "transactions.csv",
       props.positionLoadingState.transactions,
       [
-        "timestamp_ms",
+        "timestamp",
         "slot",
         "signature",
         "pairName",
@@ -43,8 +43,8 @@ export const TransactionsDownloadButton = (props: {
         "claimedFeesValue",
         "unclaimedFeesValue",
         "totalFeesValue",
-        "usdBalanceChangeValue",
         "hasApiError",
+        "usdBalanceChangeValue",
         "usdClaimedFeesValue",
         "usdOpenBalanceValue",
         "usdUnclaimedFeesValue",

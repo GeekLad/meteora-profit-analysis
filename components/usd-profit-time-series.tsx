@@ -14,13 +14,22 @@ export const UsdProfitTimeSeries = (props: {
   quoteTokenProfit: QuoteTokenProfit;
 }) => {
   const data = props.quoteTokenProfit.cumulativeProfit;
+  const minTimestamp = Math.min(...data.map((d) => d["Close/Claim Date"]));
+  const maxTimestamp = Math.max(...data.map((d) => d["Close/Claim Date"]));
 
   return (
     <div className="col-span-2 md:m-4 sm:mt-4">
       <div className="text-center">Cumulative USD Profit</div>
       <ResponsiveContainer height={200}>
         <LineChart data={data}>
-          <XAxis dataKey="Position Close Date" />
+          <XAxis
+            dataKey="Close/Claim Date"
+            domain={[minTimestamp, maxTimestamp]}
+            tickFormatter={(timestamp) =>
+              new Date(timestamp).toLocaleDateString()
+            }
+            type="number"
+          />
           <YAxis>
             <Label
               angle={-90}
@@ -38,6 +47,11 @@ export const UsdProfitTimeSeries = (props: {
           <Tooltip
             formatter={(value) =>
               value.toLocaleString(Intl.NumberFormat().resolvedOptions().locale)
+            }
+            labelFormatter={(timestamp) =>
+              new Date(timestamp).toLocaleDateString() +
+              " " +
+              new Date(timestamp).toLocaleTimeString()
             }
             labelStyle={{ color: "black" }}
           />

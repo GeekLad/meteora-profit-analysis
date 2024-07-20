@@ -3,7 +3,7 @@ import PairGroupProfits from "./PairGroupProfits";
 import { summarize } from "./util";
 
 export interface CumulativeProfitDataPoint {
-  "Position Close Date": string;
+  "Close/Claim Date": number;
   "Cumulative Profit": number;
   "Cumulative Profit in USD": number;
 }
@@ -122,17 +122,13 @@ export default class QuoteTokenProfit {
     positions.forEach((position, index) => {
       if (index == 0) {
         this.cumulativeProfit.push({
-          "Position Close Date": new Date(
-            position.closeTimestampMs,
-          ).toLocaleDateString(),
+          "Close/Claim Date": position.closeTimestampMs,
           "Cumulative Profit": position.profitLossValue,
           "Cumulative Profit in USD": Number(position.usdProfitLossValue),
         });
       } else {
         this.cumulativeProfit.push({
-          "Position Close Date": new Date(
-            position.closeTimestampMs,
-          ).toLocaleDateString(),
+          "Close/Claim Date": position.closeTimestampMs,
           "Cumulative Profit":
             Math.floor(
               (this.cumulativeProfit[index - 1]["Cumulative Profit"] +
