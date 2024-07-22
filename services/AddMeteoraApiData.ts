@@ -1,14 +1,15 @@
+import type { MeteoraPositionTransaction } from "./ParseMeteoraTransactions";
+
 import {
   fetchDeposits,
   fetchFees,
   fetchRewards,
   fetchWithdraws,
-  MeteoraClaimFeesData,
-  MeteoraClaimRewardsData,
-  MeteoraTransactionData,
+  type MeteoraClaimFeesData,
+  type MeteoraClaimRewardsData,
+  type MeteoraTransactionData,
 } from "./MeteoraDlmmApi";
 import { MeteoraPosition } from "./MeteoraPosition";
-import { MeteoraPositionTransaction } from "./ParseMeteoraTransactions";
 
 export async function addMeteoraApiData(position: MeteoraPosition) {
   const [deposits, withdraws, fees, rewards] = await Promise.all([

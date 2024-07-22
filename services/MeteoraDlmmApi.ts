@@ -91,17 +91,40 @@ const fetchMeteoraApiData = THROTTLE_METEORA_DETAIL_API(
     positionAddress: string,
     endpoint: "/deposits" | "/withdraws" | "/claim_fees" | "/claim_rewards",
     delayMs = 1000,
+    retryCount = 0,
   ): Promise<any> => {
-    const url = `${METEORA_API}/position/${positionAddress}${endpoint}`;
-    const response = await fetch(url);
+    try {
+      const url = `${METEORA_API}/position/${positionAddress}${endpoint}`;
+      const response = await fetch(url);
 
-    if (response.status == 429) {
+      if (response.status == 429) {
+        await delay(delayMs);
+
+        return fetchMeteoraApiData(positionAddress, endpoint, delayMs * 2);
+      }
+
+      const json = await response.json();
+
+      return json;
+    } catch (err) {
+      if (retryCount == 3) {
+        const errorMessage = `Critical error: Fetch for ${METEORA_API}/position/${positionAddress}${endpoint} failed 3 times.`;
+
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+      console.warn(
+        `Error fetching ${METEORA_API}/position/${positionAddress}${endpoint}, retrying in ${delayMs}`,
+      );
       await delay(delayMs);
 
-      return fetchMeteoraApiData(positionAddress, endpoint, delayMs * 2);
+      return fetchMeteoraApiData(
+        positionAddress,
+        endpoint,
+        delayMs * 2,
+        retryCount + 1,
+      );
     }
-
-    return response.json();
   },
 );
 

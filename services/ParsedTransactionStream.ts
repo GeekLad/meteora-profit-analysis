@@ -7,6 +7,7 @@ import type {
 import { Transform } from "stream";
 
 import { SignatureStream } from "./SignatureStream";
+import { getParsedTransactions } from "./ConnectionThrottle";
 
 export interface ParsedTransactionStreamSignatureCount {
   type: "signatureCount";
@@ -66,7 +67,8 @@ export class ParsedTransactionStream extends Transform {
       signatureCount: this._signatureCount,
     });
     const signatureStrings = signatures.map((signature) => signature.signature);
-    const parsedTransactions = await this._connection.getParsedTransactions(
+    const parsedTransactions = await getParsedTransactions(
+      this._connection,
       signatureStrings,
       {
         maxSupportedTransactionVersion: 0,

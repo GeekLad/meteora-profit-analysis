@@ -6,6 +6,8 @@ import {
   PublicKey,
 } from "@solana/web3.js";
 
+import { getConfirmedSignaturesForAddress2 } from "./ConnectionThrottle";
+
 interface SignatureStreamEvents {
   data: (data: ConfirmedSignatureInfo[]) => void;
   error: (error: Error) => void;
@@ -40,7 +42,8 @@ export class SignatureStream extends Transform {
     let lastDate = new Date();
 
     do {
-      newSignatures = await this._connection.getConfirmedSignaturesForAddress2(
+      newSignatures = await getConfirmedSignaturesForAddress2(
+        this._connection,
         this._walletAddress,
         {
           before: this._before,

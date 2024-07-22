@@ -147,7 +147,7 @@ export function downloadStringToFile(filename: string, text: string) {
   document.body.removeChild(element);
 }
 
-function objArrayToCsvString<T extends Object>(
+export function objArrayToCsvString<T extends Object>(
   objArray: Array<T>,
   columns?: Array<keyof T>,
 ): string {
