@@ -16,8 +16,8 @@ import {
 import pThrottle from "p-throttle";
 
 export const CONNECTION_THROTTLE = pThrottle({
-  limit: 10,
-  interval: 1000,
+  limit: 1,
+  interval: 100,
   strict: true,
 });
 
