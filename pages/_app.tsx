@@ -10,7 +10,7 @@ import { fontSans, fontMono } from "@/config/fonts";
 import "@/styles/globals.css";
 
 const RPC_URL =
-  "https://solana-mainnet.g.alchemy.com/v2/ZT3c4pYf1inIrB0GVDNR7nx4LwyED5Ci";
+  "https://mainnet.helius-rpc.com/?api-key=4e57245e-2b72-4661-8dab-5ef85aeb4526";
 
 export interface AppStateInterface {
   rpc: string;
