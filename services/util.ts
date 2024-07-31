@@ -1,5 +1,7 @@
 import type { AnyFunction, ThrottledFunction } from "p-throttle";
 
+import { Mutex } from "async-mutex";
+
 export type UnifiedFetcher = (url: string) => Promise<UnifiedResponse>;
 type UnifiedMultiFetcher = (url: string[]) => Promise<UnifiedResponse[]>;
 
@@ -334,7 +336,7 @@ export class AsyncBatchProcessor<T, R> {
   private inputQueue: T[][] = [];
   private processingMap: Map<number, Promise<R[]>> = new Map();
   private nextOutputIndex = 0;
-  private processing = false;
+  private processingMutex = new Mutex();
   private resolveNext: ((value: ProcessedResult<R>) => void) | null = null;
 
   constructor(private _processingFunction: (batch: T[]) => Promise<R[]>) {}
@@ -348,8 +350,7 @@ export class AsyncBatchProcessor<T, R> {
   }
 
   private async _processQueue(): Promise<void> {
-    if (this.processing) return;
-    this.processing = true;
+    const release = await this.processingMutex.acquire();
 
     try {
       while (true) {
@@ -367,7 +368,7 @@ export class AsyncBatchProcessor<T, R> {
             this.processingMap.delete(currentIndex);
             currentIndex++;
           } catch (error) {
-            // Handle the error if necessary, for now just break the loop
+            console.error(`Error processing batch ${currentIndex}:`, error);
             break;
           }
         }
@@ -394,7 +395,7 @@ export class AsyncBatchProcessor<T, R> {
         }
       }
     } finally {
-      this.processing = false;
+      release();
       if (this.processingMap.size > 0) {
         setTimeout(() => this._processQueue(), 0);
       } else if (this.resolveNext) {

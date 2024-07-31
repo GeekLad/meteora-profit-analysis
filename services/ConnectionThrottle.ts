@@ -21,7 +21,7 @@ import { MeteoraPosition } from "./MeteoraPosition";
 
 export const CONNECTION_THROTTLE = pThrottle({
   limit: 1,
-  interval: 100,
+  interval: 500,
   strict: true,
 });
 
