@@ -58,7 +58,7 @@ export const ProfitDisplay = (props: {
         <QuoteTokenSummaryFilter
           dates={dates}
           expanded={expanded}
-          hidden={props.loading}
+          hidden={props.positionLoadingState.positions.length == 0}
           positionLoadingState={props.positionLoadingState}
           usd={usd}
           onExpandToggle={(expanded) => setExpanded(expanded)}
@@ -66,7 +66,7 @@ export const ProfitDisplay = (props: {
           onUsdToggle={() => setUsd(!usd)}
         />
         <ProfitSummary
-          hidden={props.loading}
+          hidden={props.positionLoadingState.positions.length == 0}
           positions={filteredPositions}
           tokenMap={props.positionLoadingState.tokenMap}
           usd={usd}

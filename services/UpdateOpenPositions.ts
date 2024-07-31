@@ -1,20 +1,12 @@
 import type { MeteoraPosition } from "./MeteoraPosition";
 
-import DLMM, { type LbPosition } from "@meteora-ag/dlmm";
-import { PublicKey, type Connection } from "@solana/web3.js";
+import { type LbPosition } from "@meteora-ag/dlmm";
+import { type Connection } from "@solana/web3.js";
 
-import { unique } from "./util";
 import { getPrices } from "./JupiterPriceApi";
+import { getPositionsByUserAndLbPair } from "./ConnectionThrottle";
 
-function createDlmms(connection: Connection, pairAddresses: string[]) {
-  const pubKeys = pairAddresses.map(
-    (pairAddress) => new PublicKey(pairAddress),
-  );
-
-  return DLMM.createMultiple(connection, pubKeys);
-}
-
-function updateOpenPosition(
+function updateOpenPositionData(
   openPosition: MeteoraPosition,
   userPosition: LbPosition,
   poolPrice: number,
@@ -64,101 +56,58 @@ function updateOpenPosition(
   lastDeposit.timestamp_ms = new Date().getTime();
 }
 
-async function getPositions(pool: DLMM, openPositions: MeteoraPosition[]) {
-  const uniqueSenders = unique(
-    openPositions.map((position) => position.sender),
-  );
-
-  const positionData = await Promise.all(
-    uniqueSenders.map((sender) =>
-      pool.getPositionsByUserAndLbPair(new PublicKey(sender)),
-    ),
-  );
-
-  const activeBin = positionData[0].activeBin;
-  const userPositions = positionData
-    .map((position) => position.userPositions)
-    .flat();
-
-  return { activeBin, userPositions };
-}
-
-async function updateOpenPositionsWithDlmmPools(
-  pool: DLMM,
-  openPositions: MeteoraPosition[],
-) {
-  const { activeBin, userPositions } = await getPositions(pool, openPositions);
-  const poolPrice = Number(activeBin.price);
-
-  userPositions.forEach((userPosition) => {
-    const openPosition = openPositions.find(
-      (openPosition) =>
-        openPosition.position == userPosition.publicKey.toBase58(),
-    );
-
-    if (openPosition) {
-      updateOpenPosition(openPosition, userPosition, poolPrice);
-    } else {
-      console.warn(
-        `Position ${userPosition.publicKey.toBase58()} was found in DLMM pool, but was not found in transactions`,
-      );
-    }
-  });
-}
-
-async function updateUsdValues(openPositions: MeteoraPosition[]) {
-  const uniqueMints = openPositions
-    .map((position) => [position.mintX, position.mintY])
-    .flat()
-    .filter((address) => address != null);
+async function updatePositionUsdValues(position: MeteoraPosition) {
+  const uniqueMints = [position.mintX, position.mintY];
 
   const priceMap = await getPrices(uniqueMints);
 
-  openPositions.forEach((position) => {
-    const tokenXUsdPrice = priceMap.get(position.mintX)?.price;
-    const tokenYUsdPrice = priceMap.get(position.mintY)?.price;
+  const tokenXUsdPrice = priceMap.get(position.mintX)?.price;
+  const tokenYUsdPrice = priceMap.get(position.mintY)?.price;
 
-    if (tokenXUsdPrice && tokenYUsdPrice) {
-      const transactions = position.transactions.filter(
-        (transaction) => transaction.add,
-      );
+  if (tokenXUsdPrice && tokenYUsdPrice) {
+    const transactions = position.transactions.filter(
+      (transaction) => transaction.add,
+    );
 
-      if (transactions.length > 0) {
-        const lastAdd = transactions[transactions.length - 1];
+    if (transactions.length > 0) {
+      const lastAdd = transactions[transactions.length - 1];
 
-        lastAdd.usdMintXOpenBalance = lastAdd.mintXOpenBalance * tokenXUsdPrice;
-        lastAdd.usdMintYOpenBalance = lastAdd.mintYOpenBalance * tokenYUsdPrice;
-        lastAdd.usdOpenBalanceValue =
-          lastAdd.usdMintXOpenBalance + lastAdd.usdMintYOpenBalance;
-        lastAdd.usdMintXUnclaimedFees =
-          lastAdd.mintXUnclaimedFees * tokenXUsdPrice;
-        lastAdd.usdMintYUnclaimedFees =
-          lastAdd.mintYUnclaimedFees * tokenYUsdPrice;
-        lastAdd.usdUnclaimedFeesValue =
-          lastAdd.usdMintXUnclaimedFees + lastAdd.usdMintYUnclaimedFees;
-      }
+      lastAdd.usdMintXOpenBalance = lastAdd.mintXOpenBalance * tokenXUsdPrice;
+      lastAdd.usdMintYOpenBalance = lastAdd.mintYOpenBalance * tokenYUsdPrice;
+      lastAdd.usdOpenBalanceValue =
+        lastAdd.usdMintXOpenBalance + lastAdd.usdMintYOpenBalance;
+      lastAdd.usdMintXUnclaimedFees =
+        lastAdd.mintXUnclaimedFees * tokenXUsdPrice;
+      lastAdd.usdMintYUnclaimedFees =
+        lastAdd.mintYUnclaimedFees * tokenYUsdPrice;
+      lastAdd.usdUnclaimedFeesValue =
+        lastAdd.usdMintXUnclaimedFees + lastAdd.usdMintYUnclaimedFees;
     }
-  });
+  }
 }
 
-export async function updateOpenPositions(
+export async function updateOpenPosition(
   connection: Connection,
-  positions: MeteoraPosition[],
+  position: MeteoraPosition,
 ) {
-  const openPositions = positions.filter((position) => !position.isClosed);
+  const openPositions = await getPositionsByUserAndLbPair(connection, position);
 
-  if (openPositions.length > 0) {
-    const pairAddresses = unique(
-      openPositions.map((position) => position.lbPair),
-    );
-    const pools = await createDlmms(connection, pairAddresses);
-
-    await Promise.all(
-      pools.map((pool) =>
-        updateOpenPositionsWithDlmmPools(pool, openPositions),
-      ),
-    );
-    await updateUsdValues(openPositions);
-    openPositions.forEach((position) => position.updateValues(true));
-  }
+  await Promise.all(
+    openPositions.userPositions.map(async (userPosition) => {
+      if (userPosition.publicKey.toBase58() == position.position) {
+        updateOpenPositionData(
+          position,
+          userPosition,
+          Number(openPositions.activeBin.price),
+        );
+        await updatePositionUsdValues(position);
+        position.updateValues(true);
+        position.closeTimestampMs = new Date().getTime();
+        position.closeTimestamp =
+          new Date().toLocaleDateString() +
+          " " +
+          new Date().toLocaleTimeString();
+      }
+    }),
+  );
 }

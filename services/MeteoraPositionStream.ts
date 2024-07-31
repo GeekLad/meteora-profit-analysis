@@ -1,4 +1,4 @@
-import type { Connection } from "@solana/web3.js";
+import type { Connection, ParsedTransactionWithMeta } from "@solana/web3.js";
 
 import { Transform } from "stream";
 
@@ -18,18 +18,18 @@ import {
   type MeteoraPositionTransaction,
 } from "./ParseMeteoraTransactions";
 import { MeteoraPosition, invertAndFillMissingFees } from "./MeteoraPosition";
-import { unique } from "./util";
-import { updateOpenPositions } from "./UpdateOpenPositions";
+import { AsyncBatchProcessor } from "./util";
+import { updateOpenPosition } from "./UpdateOpenPositions";
 
 interface MeteoraPositionStreamTransactionCount {
   type: "transactionCount";
   meteoraTransactionCount: number;
 }
 
-interface MeteoraPositionStreamPositionsAndTransactions {
-  type: "positionsAndTransactions";
+interface MeteoraPositionStreamPositionAndTransactions {
+  type: "positionAndTransactions";
   transactions: MeteoraPositionTransaction[];
-  positions: MeteoraPosition[];
+  position: MeteoraPosition;
 }
 
 interface MeteoraPositionStreamUpdatingOpenPositions {
@@ -41,7 +41,7 @@ export type MeteoraPositionStreamData =
   | ParsedTransactionStreamSignatureCount
   | ParsedTransactionStreamAllTransactionsFound
   | MeteoraPositionStreamTransactionCount
-  | MeteoraPositionStreamPositionsAndTransactions
+  | MeteoraPositionStreamPositionAndTransactions
   | MeteoraPositionStreamUpdatingOpenPositions;
 
 interface MeteoraPositionStreamEvents {
@@ -57,7 +57,11 @@ export class MeteoraPositionStream extends Transform {
   private _transactionsReceivedCount = 0;
   private _transactionsProcessedCount = 0;
   private _transactions: MeteoraPositionTransaction[] = [];
-  private _updatingOpenPositions = false;
+  private _processor!: AsyncBatchProcessor<
+    ParsedTransactionWithMeta,
+    MeteoraPositionTransaction
+  >;
+  private _done = false;
 
   constructor(
     connection: Connection,
@@ -81,6 +85,14 @@ export class MeteoraPositionStream extends Transform {
 
     this._pairs = pairs;
     this._tokenList = await getJupiterTokenList();
+    this._processor = new AsyncBatchProcessor((parsedTransactionsWithMeta) =>
+      parseMeteoraTransactions(
+        connection,
+        this._pairs,
+        this._tokenList,
+        parsedTransactionsWithMeta,
+      ),
+    );
 
     new ParsedTransactionStream(
       connection,
@@ -111,68 +123,80 @@ export class MeteoraPositionStream extends Transform {
       }
       this.push(data);
 
-      return this._updateOpenPositions(connection);
+      return;
     }
 
-    const positionTransactions = await parseMeteoraTransactions(
-      connection,
-      this._pairs,
-      this._tokenList,
-      data.parsedTransactionWithMeta,
-    );
+    this._processor.addBatch(data.parsedTransactionsWithMeta);
+    const { inputCount, output } = await this._processor.next();
 
-    positionTransactions.forEach((positionTransaction) => {
-      this._transactions.push(positionTransaction);
-      this.push({
-        type: "transactionCount",
-        meteoraTransactionCount: this._transactions.length,
-      });
-    });
-
-    this._transactionsProcessedCount++;
-    this._updateOpenPositions(connection);
-  }
-
-  private async _updateOpenPositions(connection: Connection) {
-    if (
-      !this._updatingOpenPositions &&
-      this._receivedAllTransactions &&
-      this._transactionsReceivedCount == this._transactionsProcessedCount
-    ) {
-      this._updatingOpenPositions = true;
-      this._transactions = invertAndFillMissingFees(this._transactions);
-
-      const positionAddresses = unique(
-        this._transactions.map((transaction) => transaction.position),
-      );
-
-      const allPositions = positionAddresses.map((positionAddress) => {
-        const positionTransactions = this._transactions.filter(
-          (transaction) => transaction.position == positionAddress,
-        );
-
-        return new MeteoraPosition(positionTransactions);
-      });
-
-      const positions = allPositions.filter(
-        (position) => position.depositsValue < 0,
-      );
-
-      const openPositions = positions.filter((position) => !position.isClosed);
-
-      if (openPositions.length > 0) {
+    if (inputCount > 0) {
+      if (output.length > 0) {
+        this._transactions = this._transactions.concat(output);
         this.push({
-          type: "updatingOpenPositions",
-          openPositionCount: openPositions.length,
+          type: "transactionCount",
+          meteoraTransactionCount: this._transactions.length,
         });
-        await updateOpenPositions(connection, positions);
+
+        await Promise.all(
+          output.map(async (positionTransaction) => {
+            if (positionTransaction.open) {
+              await this._createPosition(connection, positionTransaction);
+            }
+          }),
+        );
       }
 
+      this._transactionsProcessedCount += inputCount;
+    }
+    this._finish();
+  }
+
+  private async _createPosition(
+    connection: Connection,
+    positionTransaction: MeteoraPositionTransaction,
+  ) {
+    const newPositionTransactions = invertAndFillMissingFees(
+      this._transactions.filter(
+        (transaction) => transaction.position == positionTransaction.position,
+      ),
+    );
+    const newPosition = new MeteoraPosition(newPositionTransactions);
+
+    if (newPosition.isClosed) {
       this.push({
-        type: "positionsAndTransactions",
-        transactions: this._transactions,
-        positions,
+        type: "positionAndTransactions",
+        transactions: newPositionTransactions,
+        position: newPosition,
       });
+    } else {
+      await this._updateOpenPosition(
+        connection,
+        newPositionTransactions,
+        newPosition,
+      );
+    }
+  }
+
+  private async _updateOpenPosition(
+    connection: Connection,
+    transactions: MeteoraPositionTransaction[],
+    position: MeteoraPosition,
+  ) {
+    await updateOpenPosition(connection, position);
+    this.push({
+      type: "positionAndTransactions",
+      transactions,
+      position,
+    });
+  }
+
+  private async _finish() {
+    if (
+      this._receivedAllTransactions &&
+      this._transactionsReceivedCount == this._transactionsProcessedCount &&
+      !this._done
+    ) {
+      this._done = true;
       this.push(null);
     }
   }

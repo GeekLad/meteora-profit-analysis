@@ -661,27 +661,35 @@ export async function parseMeteoraTransactions(
   connection: Connection,
   pairs: Map<string, MeteoraDlmmPair>,
   tokenList: Map<string, JupiterTokenListToken>,
-  transaction: ParsedTransactionWithMeta,
+  transactions: ParsedTransactionWithMeta[],
 ): Promise<MeteoraPositionTransaction[]> {
-  const meteoraInstructions = getMeteoraInstructions(transaction);
+  const parsedTransactions = await Promise.all(
+    transactions.map(async (transaction) => {
+      const meteoraInstructions = getMeteoraInstructions(transaction);
 
-  if (meteoraInstructions.length > 0) {
-    const decodedInstructions = meteoraInstructions
-      .map((instruction) => decodeMeteoraInstruction(transaction, instruction))
-      .filter(
-        (decodedInstruction) => decodedInstruction != undefined,
-      ) as MeteoraInstructionInfo[];
+      if (meteoraInstructions.length > 0) {
+        const decodedInstructions = meteoraInstructions
+          .map((instruction) =>
+            decodeMeteoraInstruction(transaction, instruction),
+          )
+          .filter(
+            (decodedInstruction) => decodedInstruction != undefined,
+          ) as MeteoraInstructionInfo[];
 
-    if (decodedInstructions.length > 0) {
-      return getMeteoraPositionTransactionsFromInstructions(
-        connection,
-        pairs,
-        tokenList,
-        transaction,
-        decodedInstructions,
-      );
-    }
-  }
+        if (decodedInstructions.length > 0) {
+          return getMeteoraPositionTransactionsFromInstructions(
+            connection,
+            pairs,
+            tokenList,
+            transaction,
+            decodedInstructions,
+          );
+        }
+      }
 
-  return [];
+      return [];
+    }),
+  );
+
+  return parsedTransactions.flat();
 }

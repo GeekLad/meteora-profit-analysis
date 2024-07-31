@@ -106,57 +106,64 @@ export default function IndexPage() {
         undefined,
         undefined,
         new Date("11/6/2023"),
-      ).on("data", (data) => {
-        switch (data.type) {
-          case "signatureCount":
-            setPositionLoadingState((currentState) => {
-              currentState.signatureCount = data.signatureCount;
+      )
+        .on("data", (data) => {
+          switch (data.type) {
+            case "signatureCount":
+              setPositionLoadingState((currentState) => {
+                currentState.signatureCount = data.signatureCount;
 
-              return updateElapsedTime(currentState);
-            });
-            break;
+                return updateElapsedTime(currentState);
+              });
+              break;
 
-          case "allSignaturesFound":
-            setPositionLoadingState((currentState) => {
-              currentState.allSignaturesFound = true;
+            case "allSignaturesFound":
+              setPositionLoadingState((currentState) => {
+                currentState.allSignaturesFound = true;
 
-              return updateElapsedTime(currentState);
-            });
-            break;
+                return updateElapsedTime(currentState);
+              });
+              break;
 
-          case "transactionCount":
-            setPositionLoadingState((currentState) => {
-              currentState.transactionCount = data.meteoraTransactionCount;
+            case "transactionCount":
+              setPositionLoadingState((currentState) => {
+                currentState.transactionCount = data.meteoraTransactionCount;
 
-              return updateElapsedTime(currentState);
-            });
-            break;
+                return updateElapsedTime(currentState);
+              });
+              break;
 
-          case "updatingOpenPositions":
-            setPositionLoadingState((currentState) => {
-              currentState.allPositionsFound = true;
-              currentState.updatingOpenPositions = true;
-              currentState.openPositionCount = data.openPositionCount;
+            case "updatingOpenPositions":
+              setPositionLoadingState((currentState) => {
+                currentState.allPositionsFound = true;
+                currentState.updatingOpenPositions = true;
+                currentState.openPositionCount = data.openPositionCount;
 
-              return updateElapsedTime(currentState);
-            });
-            break;
+                return updateElapsedTime(currentState);
+              });
+              break;
 
-          case "positionsAndTransactions":
-            setPositionLoadingState((currentState) => {
-              currentState.allPositionsFound = true;
-              currentState.rpcDataLoaded = true;
-              currentState.updatingOpenPositions = false;
-              currentState.transactions = data.transactions;
-              currentState.positions = data.positions;
+            case "positionAndTransactions":
+              setPositionLoadingState((currentState) => {
+                currentState.transactions = currentState.transactions.concat(
+                  data.transactions,
+                );
+                currentState.positions.push(data.position);
 
-              loadApiData(data.positions);
+                return updateElapsedTime(currentState);
+              });
+              setLoading(false);
+          }
+        })
+        .on("end", () => {
+          setPositionLoadingState((currentState) => {
+            currentState.allPositionsFound = true;
+            currentState.rpcDataLoaded = true;
+            loadApiData(currentState.positions);
 
-              return updateElapsedTime(currentState);
-            });
-            setLoading(false);
-        }
-      });
+            return updateElapsedTime(currentState);
+          });
+        });
     }
   }
 

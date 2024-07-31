@@ -387,8 +387,7 @@ export class MeteoraPosition {
         closeTimestampMs: {
           key: "timestamp_ms",
           summaryMethod: "last",
-          filter: (transaction) =>
-            this.isClosed ? transaction.remove : transaction.add,
+          filter: (transaction) => (this.isClosed ? transaction.close : true),
         },
         feeClaimCount: {
           summaryMethod: "count",

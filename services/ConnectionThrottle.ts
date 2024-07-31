@@ -1,5 +1,6 @@
 import {
   Connection,
+  PublicKey,
   type AccountInfo,
   type Commitment,
   type ConfirmedSignatureInfo,
@@ -9,15 +10,18 @@ import {
   type GetVersionedTransactionConfig,
   type ParsedAccountData,
   type ParsedTransactionWithMeta,
-  type PublicKey,
   type RpcResponseAndContext,
   type TransactionSignature,
 } from "@solana/web3.js";
 import pThrottle from "p-throttle";
+import DLMM from "@meteora-ag/dlmm";
+
+import { throttledCachedRequest } from "./util";
+import { MeteoraPosition } from "./MeteoraPosition";
 
 export const CONNECTION_THROTTLE = pThrottle({
-  limit: 10,
-  interval: 1000,
+  limit: 1,
+  interval: 100,
   strict: true,
 });
 
@@ -55,5 +59,20 @@ export const getConfirmedSignaturesForAddress2 = CONNECTION_THROTTLE(
       options,
       commitment,
     );
+  },
+);
+
+export const createDlmm = throttledCachedRequest(
+  async (connection: Connection, pairAddress: string) => {
+    return DLMM.create(connection, new PublicKey(pairAddress));
+  },
+  CONNECTION_THROTTLE,
+);
+
+export const getPositionsByUserAndLbPair = CONNECTION_THROTTLE(
+  async (connection: Connection, position: MeteoraPosition) => {
+    const pool = await createDlmm(connection, position.lbPair);
+
+    return pool.getPositionsByUserAndLbPair(new PublicKey(position.sender));
   },
 );

@@ -8,6 +8,7 @@ import { Transform } from "stream";
 
 import { SignatureStream } from "./SignatureStream";
 import { getParsedTransactions } from "./ConnectionThrottle";
+import { AsyncBatchProcessor } from "./util";
 
 export interface ParsedTransactionStreamSignatureCount {
   type: "signatureCount";
@@ -20,7 +21,7 @@ export interface ParsedTransactionStreamAllTransactionsFound {
 
 interface ParsedTransactionStreamParsedTransactionWithMeta {
   type: "parsedTransaction";
-  parsedTransactionWithMeta: ParsedTransactionWithMeta;
+  parsedTransactionsWithMeta: ParsedTransactionWithMeta[];
 }
 
 export type ParsedTransactionStreamData =
@@ -39,6 +40,10 @@ export class ParsedTransactionStream extends Transform {
   private _signatureCount = 0;
   private _processedCount = 0;
   private _allSignaturesFound?: ParsedTransactionStreamAllTransactionsFound;
+  private _processor: AsyncBatchProcessor<
+    string,
+    ParsedTransactionWithMeta | null
+  >;
 
   constructor(
     connection: Connection,
@@ -49,6 +54,12 @@ export class ParsedTransactionStream extends Transform {
   ) {
     super({ objectMode: true });
     this._connection = connection;
+    this._processor = new AsyncBatchProcessor((signatures) =>
+      getParsedTransactions(this._connection, signatures, {
+        maxSupportedTransactionVersion: 0,
+        commitment: "confirmed",
+      }),
+    );
     new SignatureStream(connection, walletAddress, before, until, minDate)
       .on("data", (signatures: ConfirmedSignatureInfo[]) =>
         this._processSignatures(signatures),
@@ -67,27 +78,22 @@ export class ParsedTransactionStream extends Transform {
       signatureCount: this._signatureCount,
     });
     const signatureStrings = signatures.map((signature) => signature.signature);
-    const parsedTransactions = await getParsedTransactions(
-      this._connection,
-      signatureStrings,
-      {
-        maxSupportedTransactionVersion: 0,
-        commitment: "confirmed",
-      },
+
+    this._processor.addBatch(signatureStrings);
+    const { inputCount, output } = await this._processor.next();
+
+    const parsedTransactionsWithMeta = output.filter(
+      (parsedTransaction) => parsedTransaction != null,
     );
 
-    parsedTransactions.forEach((parsedTransaction) => {
-      this._processedCount++;
-      if (parsedTransaction != null) {
-        const parsedTransactionStreamData: ParsedTransactionStreamParsedTransactionWithMeta =
-          {
-            type: "parsedTransaction",
-            parsedTransactionWithMeta: parsedTransaction,
-          };
+    this._processedCount += inputCount;
 
-        this.push(parsedTransactionStreamData);
-      }
-    });
+    if (parsedTransactionsWithMeta.length > 0) {
+      this.push({
+        type: "parsedTransaction",
+        parsedTransactionsWithMeta,
+      });
+    }
     this._finish();
   }
 
