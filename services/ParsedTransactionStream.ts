@@ -84,7 +84,7 @@ export class ParsedTransactionStream extends Transform {
 
     const parsedTransactionsWithMeta = output.filter(
       (parsedTransaction) => parsedTransaction != null,
-    );
+    ) as ParsedTransactionWithMeta[];
 
     this._processedCount += inputCount;
 
