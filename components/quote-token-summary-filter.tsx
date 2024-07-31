@@ -300,7 +300,9 @@ export const QuoteTokenSummaryFilter = (props: {
           >
             Filter Results
           </Button>
-          <div className="m-4 flex w-full justify-end items-end">
+          <div
+            className={`m-4 flex w-full justify-end items-end ${props.positionLoadingState.updatingUsdValues ? "" : "hidden"}`}
+          >
             <Tooltip
               color="warning"
               content="Note: Data is missing, USD values are not fully loaded in yet"
