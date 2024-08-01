@@ -35,6 +35,7 @@ export interface PositionLoadingState {
   updatedUsdPercent: number;
   usdUpdateStartTime: number;
   estimatedCompletionString: string;
+  cancel?: () => any;
 }
 
 export default function IndexPage() {
@@ -100,7 +101,7 @@ export default function IndexPage() {
         return { ...currentState, tokenMap };
       });
 
-      new MeteoraPositionStream(
+      const meteoraPositionStream = new MeteoraPositionStream(
         appState.connection,
         walletAddress,
         undefined,
@@ -156,49 +157,56 @@ export default function IndexPage() {
           }
         })
         .on("end", () => {
+          loadApiData();
+        });
+
+      setPositionLoadingState((currentState) => {
+        return {
+          ...currentState,
+          cancel: () => {
+            meteoraPositionStream!.cancel();
+            loadApiData();
+          },
+        };
+      });
+    }
+  }
+
+  async function loadApiData() {
+    setPositionLoadingState((currentState) => {
+      currentState.allSignaturesFound = true;
+      currentState.allPositionsFound = true;
+      currentState.rpcDataLoaded = true;
+      currentState.usdUpdateStartTime = new Date().getTime();
+      currentState.updatingUsdValues = true;
+
+      new UsdMeteoraPositionStream(currentState.positions)
+        .on("data", (data) => {
           setPositionLoadingState((currentState) => {
-            currentState.allPositionsFound = true;
-            currentState.rpcDataLoaded = true;
-            loadApiData(currentState.positions);
+            const oldPosition = currentState.positions.find(
+              (position) => position.position == data.updatedPosition.position,
+            )!;
+            const index = currentState.positions.indexOf(oldPosition);
+
+            currentState.positions[index] = data.updatedPosition;
+            currentState.updatedUsdValueCount = data.updatedPositionCount;
+
+            currentState.updatedUsdPercent =
+              (100 * data.updatedPositionCount) / currentState.positions.length;
+
+            return updateElapsedTime(currentState);
+          });
+        })
+        .on("end", () => {
+          setPositionLoadingState((currentState) => {
+            currentState.apiDataLoaded = true;
 
             return updateElapsedTime(currentState);
           });
         });
-    }
-  }
-
-  async function loadApiData(positions: MeteoraPosition[]) {
-    setPositionLoadingState((currentState) => {
-      currentState.usdUpdateStartTime = new Date().getTime();
-      currentState.updatingUsdValues = true;
 
       return updateElapsedTime(currentState);
     });
-
-    new UsdMeteoraPositionStream(positions)
-      .on("data", (data) => {
-        setPositionLoadingState((currentState) => {
-          const oldPosition = currentState.positions.find(
-            (position) => position.position == data.updatedPosition.position,
-          )!;
-          const index = currentState.positions.indexOf(oldPosition);
-
-          currentState.positions[index] = data.updatedPosition;
-          currentState.updatedUsdValueCount = data.updatedPositionCount;
-
-          currentState.updatedUsdPercent =
-            (100 * data.updatedPositionCount) / positions.length;
-
-          return updateElapsedTime(currentState);
-        });
-      })
-      .on("end", () => {
-        setPositionLoadingState((currentState) => {
-          currentState.apiDataLoaded = true;
-
-          return updateElapsedTime(currentState);
-        });
-      });
   }
 
   useEffect(() => {

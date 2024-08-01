@@ -44,6 +44,9 @@ export class ParsedTransactionStream extends Transform {
     string,
     ParsedTransactionWithMeta | null
   >;
+  private _signatureStream: SignatureStream;
+  private _cancelling = false;
+  private _cancelled = false;
 
   constructor(
     connection: Connection,
@@ -60,13 +63,21 @@ export class ParsedTransactionStream extends Transform {
         commitment: "confirmed",
       }),
     );
-    new SignatureStream(connection, walletAddress, before, until, minDate)
+    this._signatureStream = new SignatureStream(
+      connection,
+      walletAddress,
+      before,
+      until,
+      minDate,
+    )
       .on("data", (signatures: ConfirmedSignatureInfo[]) =>
         this._processSignatures(signatures),
       )
       .on("end", async () => {
         this._allSignaturesFound = { type: "allSignaturesFound" };
-        this.push(this._allSignaturesFound);
+        if (!this._cancelling && !this._cancelled) {
+          this.push(this._allSignaturesFound);
+        }
 
         while (!this._processor.isComplete) {
           await this._processBatch();
@@ -76,30 +87,44 @@ export class ParsedTransactionStream extends Transform {
       .on("error", (error) => this.emit("error", error));
   }
 
+  cancel() {
+    this._signatureStream.cancel();
+    this._cancelling = true;
+  }
+
   private async _processBatch() {
-    const { inputCount, output } = await this._processor.next();
+    if (!this._cancelling && !this._cancelled) {
+      const { inputCount, output } = await this._processor.next();
 
-    const parsedTransactionsWithMeta = output.filter(
-      (parsedTransaction) => parsedTransaction != null,
-    ) as ParsedTransactionWithMeta[];
+      const parsedTransactionsWithMeta = output.filter(
+        (parsedTransaction) => parsedTransaction != null,
+      ) as ParsedTransactionWithMeta[];
 
-    this._processedCount += inputCount;
+      this._processedCount += inputCount;
 
-    if (parsedTransactionsWithMeta.length > 0) {
-      this.push({
-        type: "parsedTransaction",
-        parsedTransactionsWithMeta,
-      });
+      if (parsedTransactionsWithMeta.length > 0) {
+        if (!this._cancelling && !this._cancelled) {
+          this.push({
+            type: "parsedTransaction",
+            parsedTransactionsWithMeta,
+          });
+        }
+      }
+      this._finish();
+    } else if (!this._cancelled) {
+      this._cancelled = true;
+      this.push(null);
     }
-    this._finish();
   }
 
   private async _processSignatures(signatures: ConfirmedSignatureInfo[]) {
     this._signatureCount += signatures.length;
-    this.push({
-      type: "signatureCount",
-      signatureCount: this._signatureCount,
-    });
+    if (!this._cancelling && !this._cancelled) {
+      this.push({
+        type: "signatureCount",
+        signatureCount: this._signatureCount,
+      });
+    }
     const signatureStrings = signatures.map((signature) => signature.signature);
 
     this._processor.addBatch(signatureStrings);
@@ -111,7 +136,9 @@ export class ParsedTransactionStream extends Transform {
       this._allSignaturesFound &&
       this._signatureCount == this._processedCount
     ) {
-      this.push(null);
+      if (!this._cancelling && !this._cancelled) {
+        this.push(null);
+      }
     }
   }
 

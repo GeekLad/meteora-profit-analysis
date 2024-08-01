@@ -20,6 +20,7 @@ export class SignatureStream extends Transform {
   private _before?: string;
   private _until?: string;
   private _minDate?: Date;
+  private _cancel = false;
 
   constructor(
     connection: Connection,
@@ -35,6 +36,10 @@ export class SignatureStream extends Transform {
     this._until = until;
     this._minDate = minDate;
     this._streamSignatures().catch((error) => this.emit("error", error));
+  }
+
+  cancel() {
+    this._cancel = true;
   }
 
   private async _streamSignatures() {
@@ -65,6 +70,7 @@ export class SignatureStream extends Transform {
         );
       }
     } while (
+      !this._cancel &&
       newSignatures.length > 0 &&
       (!this._minDate || (this._minDate && lastDate > this._minDate))
     );
