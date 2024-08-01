@@ -28,7 +28,7 @@ export const LoadingSummaryNoUsd = (props: {
         </p>
         <p className="mb-4">
           If you know you have no DLMM transactions prior to the date above or
-          you do not want to analyze on older transactions/positions, you can
+          you do not want to analyze older transactions/positions, you can
           safely stop loading more transactions.
         </p>
         <Button
