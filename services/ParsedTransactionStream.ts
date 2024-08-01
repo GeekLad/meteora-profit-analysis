@@ -8,7 +8,7 @@ import { Transform } from "stream";
 
 import { SignatureStream } from "./SignatureStream";
 import { getParsedTransactions } from "./ConnectionThrottle";
-import { AsyncBatchProcessor } from "./util";
+import { AsyncBatchProcessor, delay } from "./util";
 
 export interface ParsedTransactionStreamSignatureCount {
   type: "signatureCount";
@@ -64,22 +64,19 @@ export class ParsedTransactionStream extends Transform {
       .on("data", (signatures: ConfirmedSignatureInfo[]) =>
         this._processSignatures(signatures),
       )
-      .on("end", () => {
+      .on("end", async () => {
         this._allSignaturesFound = { type: "allSignaturesFound" };
         this.push(this._allSignaturesFound);
+
+        while (!this._processor.isComplete) {
+          await this._processBatch();
+          await delay(0);
+        }
       })
       .on("error", (error) => this.emit("error", error));
   }
 
-  private async _processSignatures(signatures: ConfirmedSignatureInfo[]) {
-    this._signatureCount += signatures.length;
-    this.push({
-      type: "signatureCount",
-      signatureCount: this._signatureCount,
-    });
-    const signatureStrings = signatures.map((signature) => signature.signature);
-
-    this._processor.addBatch(signatureStrings);
+  private async _processBatch() {
     const { inputCount, output } = await this._processor.next();
 
     const parsedTransactionsWithMeta = output.filter(
@@ -95,6 +92,18 @@ export class ParsedTransactionStream extends Transform {
       });
     }
     this._finish();
+  }
+
+  private async _processSignatures(signatures: ConfirmedSignatureInfo[]) {
+    this._signatureCount += signatures.length;
+    this.push({
+      type: "signatureCount",
+      signatureCount: this._signatureCount,
+    });
+    const signatureStrings = signatures.map((signature) => signature.signature);
+
+    this._processor.addBatch(signatureStrings);
+    this._processBatch();
   }
 
   private _finish() {

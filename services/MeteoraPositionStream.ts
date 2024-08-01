@@ -18,7 +18,7 @@ import {
   type MeteoraPositionTransaction,
 } from "./ParseMeteoraTransactions";
 import { MeteoraPosition, invertAndFillMissingFees } from "./MeteoraPosition";
-import { AsyncBatchProcessor } from "./util";
+import { AsyncBatchProcessor, delay } from "./util";
 import { updateOpenPosition } from "./UpdateOpenPositions";
 
 interface MeteoraPositionStreamTransactionCount {
@@ -102,31 +102,18 @@ export class MeteoraPositionStream extends Transform {
       minDate,
     )
       .on("data", (data) => this._parseTransactions(connection, data))
-      .on("end", () => {
+      .on("end", async () => {
         this._receivedAllTransactions = true;
+
+        while (!this._processor.isComplete) {
+          await this._processBatch(connection);
+          await delay(0);
+        }
       })
       .on("error", (error) => this.emit("error", error));
   }
 
-  private async _parseTransactions(
-    connection: Connection,
-    data: ParsedTransactionStreamData,
-  ) {
-    if (data.type != "parsedTransaction") {
-      switch (data.type) {
-        case "allSignaturesFound":
-          this._receivedAllTransactions = true;
-          break;
-        case "signatureCount":
-          this._transactionsReceivedCount = data.signatureCount;
-          break;
-      }
-      this.push(data);
-
-      return;
-    }
-
-    this._processor.addBatch(data.parsedTransactionsWithMeta);
+  private async _processBatch(connection: Connection) {
     const { inputCount, output } = await this._processor.next();
 
     if (inputCount > 0) {
@@ -149,6 +136,28 @@ export class MeteoraPositionStream extends Transform {
       this._transactionsProcessedCount += inputCount;
     }
     this._finish();
+  }
+
+  private async _parseTransactions(
+    connection: Connection,
+    data: ParsedTransactionStreamData,
+  ) {
+    if (data.type != "parsedTransaction") {
+      switch (data.type) {
+        case "allSignaturesFound":
+          this._receivedAllTransactions = true;
+          break;
+        case "signatureCount":
+          this._transactionsReceivedCount = data.signatureCount;
+          break;
+      }
+      this.push(data);
+
+      return;
+    }
+
+    this._processor.addBatch(data.parsedTransactionsWithMeta);
+    this._processBatch(connection);
   }
 
   private async _createPosition(

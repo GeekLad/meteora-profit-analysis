@@ -333,89 +333,130 @@ interface ProcessedResult<R> {
 }
 
 export class AsyncBatchProcessor<T, R> {
-  private inputQueue: T[][] = [];
-  private processingMap: Map<number, Promise<R[]>> = new Map();
-  private nextOutputIndex = 0;
-  private processingMutex = new Mutex();
-  private resolveNext: ((value: ProcessedResult<R>) => void) | null = null;
+  private _inputQueue: T[][] = [];
+  private _totalInputCount = 0;
+  private _processedInputCount = 0;
+  private _processingMap: Map<number, Promise<R[]>> = new Map();
+  private _completedResultsMap: Map<number, R[]> = new Map();
+  private _output: ProcessedResult<R> = { inputCount: 0, output: [] };
+  private _nextOutputIndex = 0;
+  private _processingMutex = new Mutex();
+  private _resolveQueue: ((value: ProcessedResult<R>) => void)[] = [];
+
+  get isComplete(): boolean {
+    return this._totalInputCount === this._processedInputCount;
+  }
 
   constructor(private _processingFunction: (batch: T[]) => Promise<R[]>) {}
 
   async addBatch(batch: T[]): Promise<void> {
-    const index = this.inputQueue.length;
+    const index = this._inputQueue.length;
 
-    this.inputQueue.push(batch);
-    this.processingMap.set(index, this._processingFunction(batch));
-    this._processQueue();
+    this._inputQueue.push(batch);
+    this._processingMap.set(index, this._processingFunction(batch));
+    this._totalInputCount += batch.length;
+    this._processResults();
   }
 
-  private async _processQueue(): Promise<void> {
-    const release = await this.processingMutex.acquire();
+  private async _updateResultsMap() {
+    if (this._processingMap.size === 0) {
+      return;
+    }
+
+    const entries = Array.from(this._processingMap.entries());
+    const results = await Promise.allSettled(entries.map((entry) => entry[1]));
+
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        const output = result.value;
+        const mapIndex = entries[index][0];
+
+        this._completedResultsMap.set(mapIndex, output);
+        this._processingMap.delete(mapIndex);
+      }
+    });
+  }
+
+  private _getContiguousResults() {
+    const contiguousResults: { inputCount: number; output: R[] }[] = [];
+    let currentIndex = this._nextOutputIndex;
+
+    while (this._completedResultsMap.has(currentIndex)) {
+      contiguousResults.push({
+        inputCount: this._inputQueue[currentIndex].length,
+        output: this._completedResultsMap.get(currentIndex)!,
+      });
+      currentIndex++;
+    }
+
+    return contiguousResults;
+  }
+
+  private _appendResults(
+    contiguousResults: { inputCount: number; output: R[] }[],
+  ) {
+    if (contiguousResults.length > 0) {
+      contiguousResults.forEach((result) => {
+        this._output.inputCount += result.inputCount;
+        this._output.output = this._output.output.concat(result.output);
+      });
+      this._nextOutputIndex += contiguousResults.length;
+    }
+  }
+
+  private async _updateOutput() {
+    await this._updateResultsMap();
+
+    const contiguousResults = this._getContiguousResults();
+
+    if (contiguousResults.length > 0) {
+      this._appendResults(contiguousResults);
+    }
+  }
+
+  private _processResolveQueue() {
+    while (this._resolveQueue.length > 0) {
+      const resolve = this._resolveQueue.shift()!;
+
+      resolve(this._output);
+      this._processedInputCount += this._output.inputCount;
+      this._output = {
+        inputCount: 0,
+        output: [],
+      };
+    }
+  }
+
+  private async _processResults() {
+    const release = await this._processingMutex.acquire();
 
     try {
-      while (true) {
-        const contiguousResults: ProcessedResult<R>[] = [];
-        let currentIndex = this.nextOutputIndex;
+      await this._updateOutput();
 
-        while (this.processingMap.has(currentIndex)) {
-          const promise = this.processingMap.get(currentIndex)!;
-
-          try {
-            const results = await promise;
-            const inputCount = this.inputQueue[currentIndex].length;
-
-            contiguousResults.push({ inputCount, output: results });
-            this.processingMap.delete(currentIndex);
-            currentIndex++;
-          } catch (error) {
-            console.error(`Error processing batch ${currentIndex}:`, error);
-            break;
-          }
-        }
-
-        if (contiguousResults.length > 0) {
-          const mergedResult: ProcessedResult<R> = {
-            inputCount: contiguousResults.reduce(
-              (sum, result) => sum + result.inputCount,
-              0,
-            ),
-            output: contiguousResults.flatMap((result) => result.output),
-          };
-
-          this.nextOutputIndex = currentIndex;
-
-          if (this.resolveNext) {
-            this.resolveNext(mergedResult);
-            this.resolveNext = null;
-
-            return; // Exit after resolving
-          }
-        } else {
-          break; // No contiguous results, exit the loop
-        }
+      if (this._output.inputCount > 0) {
+        this._processResolveQueue();
       }
+
+      while (this._processingMap.size > 0) {
+        await this._updateOutput();
+
+        if (this._output.inputCount > 0) {
+          this._processResolveQueue();
+        }
+        await delay(0); // To avoid blocking the event loop
+      }
+
+      await this._updateOutput();
+      this._processResolveQueue();
     } finally {
       release();
-      if (this.processingMap.size > 0) {
-        setTimeout(() => this._processQueue(), 0);
-      } else if (this.resolveNext) {
-        this.resolveNext({ inputCount: 0, output: [] });
-        this.resolveNext = null;
-      }
     }
   }
 
   async next(): Promise<ProcessedResult<R>> {
-    if (
-      this.processingMap.size === 0 &&
-      this.inputQueue.length === this.nextOutputIndex
-    ) {
-      return { inputCount: 0, output: [] };
-    }
-
     return new Promise((resolve) => {
-      this.resolveNext = resolve;
-      this._processQueue();
+      this._resolveQueue.push(resolve);
+      this._processResults();
     });
   }
 }
