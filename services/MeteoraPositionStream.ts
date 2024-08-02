@@ -170,7 +170,7 @@ export class MeteoraPositionStream extends Transform {
         this.push(data);
       }
 
-      return;
+      return this._finish();
     }
 
     this._processor.addBatch(data.parsedTransactionsWithMeta);
