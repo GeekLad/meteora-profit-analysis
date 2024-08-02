@@ -31,11 +31,9 @@ const ProfitTooltip: ContentType<ValueType, NameType> = (props) => {
         <p className="font-bold">{props.label}</p>
         <p>
           Total Deposits:{" "}
-          {
-            -totalDeposits.toLocaleString(
-              Intl.NumberFormat().resolvedOptions().locale,
-            )
-          }{" "}
+          {(-totalDeposits).toLocaleString(
+            Intl.NumberFormat().resolvedOptions().locale,
+          )}{" "}
           {quote}
         </p>
         <p>
