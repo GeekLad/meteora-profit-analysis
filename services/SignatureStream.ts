@@ -7,6 +7,9 @@ import {
 } from "@solana/web3.js";
 
 import { getConfirmedSignaturesForAddress2 } from "./ConnectionThrottle";
+import { chunkArray } from "./util";
+
+const CHUNK_SIZE = 500;
 
 interface SignatureStreamEvents {
   data: (data: ConfirmedSignatureInfo[]) => void;
@@ -62,7 +65,9 @@ export class SignatureStream extends Transform {
         );
 
         if (validSignatures.length > 0) {
-          this.push(validSignatures);
+          const chunks = chunkArray(validSignatures, CHUNK_SIZE);
+
+          chunks.forEach((chunk) => this.push(chunk));
         }
         this._before = newSignatures[newSignatures.length - 1].signature;
         lastDate = new Date(

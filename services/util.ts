@@ -28,6 +28,17 @@ export async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function chunkArray<T>(array: T[], size: number): T[][] {
+  if (size <= 0) throw new Error("Size must be greater than 0");
+  const result: T[][] = [];
+
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+
+  return result;
+}
+
 class ThrottledCachedRequest<RequestParams extends any[], Response> {
   private _requestQueue: Map<string, Array<(response: Response) => void>> =
     new Map();
