@@ -26,11 +26,15 @@ export default class QuoteTokenProfit {
   positionCount!: number;
   positionCountWithApiErrors!: number;
   transactionCount!: number;
+  totalDeposits!: number;
+  profitPercent: number;
   totalProfit!: number;
   profitMissingApiData!: number;
+  usdProfitPercent: null | number = null;
   usdTotalProfit: null | number = null;
   totalFees!: number;
   feesMissingApiData!: number;
+  usdTotalDeposits: null | number = null;
   usdTotalFees: null | number = null;
   usdTotalRewards: null | number = null;
   divergenceLoss: number;
@@ -62,6 +66,10 @@ export default class QuoteTokenProfit {
           summaryMethod: "sum",
           key: "transactionCount",
         },
+        totalDeposits: {
+          summaryMethod: "sum",
+          key: "totalDeposits",
+        },
         totalProfit: {
           summaryMethod: "sum",
           key: "totalProfit",
@@ -90,6 +98,10 @@ export default class QuoteTokenProfit {
             Math.floor(value * 10 ** this.quoteToken.decimals) /
             10 ** this.quoteToken.decimals,
         },
+        usdTotalDeposits: {
+          summaryMethod: "sum",
+          key: "usdTotalDeposits",
+        },
         usdTotalProfit: {
           summaryMethod: "sum",
           key: "usdTotalProfit",
@@ -113,6 +125,11 @@ export default class QuoteTokenProfit {
       10 ** this.quoteToken.decimals;
     this.usdDivergenceLoss =
       this.usdTotalProfit! - this.usdTotalFees! - this.usdTotalRewards!;
+    this.profitPercent = -this.totalProfit / this.totalDeposits;
+    this.usdProfitPercent =
+      this.usdTotalProfit && this.usdTotalDeposits
+        ? -this.usdTotalProfit / this.usdTotalDeposits
+        : null;
 
     const positions = pairGroupProfits
       .map((pairGroupSummary) => pairGroupSummary.positions)
@@ -151,9 +168,13 @@ export default class QuoteTokenProfit {
         "Fees in USD": pairGroup.usdTotalFees,
         "Rewards in USD": pairGroup.usdTotalRewards,
         "Divergence Loss": pairGroup.divergenceLoss,
+        "Total Deposits": pairGroup.totalDeposits,
         "Divergence Loss in USD": pairGroup.usdDivergenceLoss,
+        "Total Deposits in USD": pairGroup.usdTotalDeposits,
         "Total Profit": pairGroup.totalProfit,
+        "Total Profit Percent": pairGroup.profitPercent,
         "Total Profit in USD": pairGroup.usdTotalProfit,
+        "USD Total Profit Percent": pairGroup.usdProfitPercent,
       };
     });
   }

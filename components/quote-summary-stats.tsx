@@ -6,6 +6,14 @@ export const QuoteSummaryStats = (props: {
   return (
     <div>
       <div className="columns-2">
+        <div>Total Deposits:</div>
+        <div>
+          {(-props.quoteTokenProfit.totalDeposits).toLocaleString(
+            Intl.NumberFormat().resolvedOptions().locale,
+          )}
+        </div>
+      </div>
+      <div className="columns-2">
         <div>Total Fees:</div>
         <div>
           {props.quoteTokenProfit.totalFees.toLocaleString(
@@ -26,6 +34,18 @@ export const QuoteSummaryStats = (props: {
         <div>
           {props.quoteTokenProfit.totalProfit.toLocaleString(
             Intl.NumberFormat().resolvedOptions().locale,
+          )}
+        </div>
+      </div>
+      <div className="columns-2">
+        <div>Profit %:</div>
+        <div>
+          {props.quoteTokenProfit.profitPercent.toLocaleString(
+            Intl.NumberFormat().resolvedOptions().locale,
+            {
+              style: "percent",
+              maximumFractionDigits: 2,
+            },
           )}
         </div>
       </div>

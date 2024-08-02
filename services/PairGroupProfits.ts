@@ -9,13 +9,17 @@ export default class PairGroupProfits {
   positionCount!: number;
   positionCountWithApiErrors!: number;
   transactionCount!: number;
+  totalDeposits!: number;
   totalProfit!: number;
+  profitPercent: number;
   profitMissingApiData!: number;
   usdTotalProfit: null | number = null;
+  usdProfitPercent: null | number;
   divergenceLoss!: number;
   usdDivergenceLoss: null | number = null;
   totalFees!: number;
   feesMissingApiData!: number;
+  usdTotalDeposits: null | number = null;
   usdTotalFees: null | number = null;
   usdTotalRewards: null | number = null;
 
@@ -40,6 +44,13 @@ export default class PairGroupProfits {
         transactionCount: {
           summaryMethod: "sum",
           key: "transactionCount",
+        },
+        totalDeposits: {
+          summaryMethod: "sum",
+          key: "depositsValue",
+          postProcess: (value) =>
+            Math.floor(value * 10 ** this.quoteToken.decimals) /
+            10 ** this.quoteToken.decimals,
         },
         totalProfit: {
           summaryMethod: "sum",
@@ -79,6 +90,10 @@ export default class PairGroupProfits {
             Math.floor(value * 10 ** this.quoteToken.decimals) /
             10 ** this.quoteToken.decimals,
         },
+        usdTotalDeposits: {
+          summaryMethod: "sum",
+          key: "usdDepositsValue",
+        },
         usdTotalProfit: {
           summaryMethod: "sum",
           key: "usdProfitLossValue",
@@ -97,5 +112,10 @@ export default class PairGroupProfits {
     );
     this.usdDivergenceLoss =
       this.usdTotalProfit! - this.usdTotalFees! - this.usdTotalRewards!;
+    this.profitPercent = -this.totalProfit / this.totalDeposits;
+    this.usdProfitPercent =
+      this.usdTotalProfit && this.usdTotalDeposits
+        ? -this.usdTotalProfit / this.usdTotalDeposits
+        : null;
   }
 }

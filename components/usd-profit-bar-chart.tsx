@@ -19,13 +19,28 @@ const ProfitTooltip: ContentType<ValueType, NameType> = (props) => {
   if (props.active && props.payload && props.payload.length) {
     const {
       "Fees in USD": fees,
+      "Total Deposits in USD": totalDeposits,
       "Divergence Loss in USD": divergence,
       "Total Profit in USD": profit,
+      "USD Total Profit Percent": profitPercent,
     } = props.payload[0].payload;
 
     return (
-      <div className="bg-white text-black">
+      <div className="bg-white text-black p-2">
         <p className="font-bold">{props.label}</p>
+        <p>
+          Total Deposits:{" "}
+          {(-totalDeposits).toLocaleString(
+            Intl.NumberFormat().resolvedOptions().locale,
+            {
+              style: "currency",
+              currency: "USD",
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            },
+          )}{" "}
+          USD
+        </p>
         <p>
           Fees:{" "}
           {fees.toLocaleString(Intl.NumberFormat().resolvedOptions().locale, {
@@ -57,6 +72,13 @@ const ProfitTooltip: ContentType<ValueType, NameType> = (props) => {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
+        </p>
+        <p className="font-bold">
+          Profit %:{" "}
+          {profitPercent.toLocaleString(
+            Intl.NumberFormat().resolvedOptions().locale,
+            { style: "percent", maximumFractionDigits: 2 },
+          )}
         </p>
       </div>
     );
