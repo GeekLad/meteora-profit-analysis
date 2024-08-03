@@ -10,8 +10,8 @@ import { FullPageSpinner } from "@/components/full-page-spinner";
 import { MeteoraPositionTransaction } from "@/services/ParseMeteoraTransactions";
 import { MeteoraPosition } from "@/services/MeteoraPosition";
 import {
+  getCachedJupiterTokenList,
   JupiterTokenListToken,
-  getJupiterTokenList,
 } from "@/services/JupiterTokenList";
 import { UsdMeteoraPositionStream } from "@/services/UsdMeteoraPositionStream";
 
@@ -95,7 +95,7 @@ export default function IndexPage() {
         return { ...defaultState, startTime: new Date().getTime() };
       });
 
-      const tokenMap = await getJupiterTokenList();
+      const tokenMap = await getCachedJupiterTokenList();
 
       setPositionLoadingState((currentState) => {
         return { ...currentState, tokenMap };
@@ -104,6 +104,7 @@ export default function IndexPage() {
       const meteoraPositionStream = new MeteoraPositionStream(
         appState.connection,
         walletAddress,
+        tokenMap,
         undefined,
         undefined,
         new Date("11/6/2023"),

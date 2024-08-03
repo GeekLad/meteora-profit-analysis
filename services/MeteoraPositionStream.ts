@@ -9,10 +9,7 @@ import {
   type ParsedTransactionStreamSignatureCount,
 } from "./ParsedTransactionStream";
 import { getDlmmPairs, type MeteoraDlmmPair } from "./MeteoraDlmmApi";
-import {
-  getJupiterTokenList,
-  type JupiterTokenListToken,
-} from "./JupiterTokenList";
+import { type JupiterTokenListToken } from "./JupiterTokenList";
 import {
   parseMeteoraTransactions,
   type MeteoraPositionTransaction,
@@ -52,7 +49,7 @@ interface MeteoraPositionStreamEvents {
 
 export class MeteoraPositionStream extends Transform {
   private _pairs: Map<string, MeteoraDlmmPair> = new Map();
-  private _tokenList: Map<string, JupiterTokenListToken> = new Map();
+  private _tokenMap: Map<string, JupiterTokenListToken>;
   private _transactionStream!: ParsedTransactionStream;
   private _receivedAllTransactions = false;
   private _transactionsReceivedCount = 0;
@@ -65,15 +62,18 @@ export class MeteoraPositionStream extends Transform {
   private _done = false;
   private _cancelling = false;
   private _cancelled = false;
+  private _pendingPositions: string[] = [];
 
   constructor(
     connection: Connection,
     walletAddress: string,
+    tokenMap: Map<string, JupiterTokenListToken>,
     before?: string,
     until?: string,
     minDate?: Date,
   ) {
     super({ objectMode: true });
+    this._tokenMap = tokenMap;
     this._init(connection, walletAddress, before, until, minDate);
   }
 
@@ -92,12 +92,11 @@ export class MeteoraPositionStream extends Transform {
     const { pairs } = await getDlmmPairs();
 
     this._pairs = pairs;
-    this._tokenList = await getJupiterTokenList();
     this._processor = new AsyncBatchProcessor((parsedTransactionsWithMeta) =>
       parseMeteoraTransactions(
         connection,
         this._pairs,
-        this._tokenList,
+        this._tokenMap,
         parsedTransactionsWithMeta,
       ),
     );
@@ -128,12 +127,10 @@ export class MeteoraPositionStream extends Transform {
       if (inputCount > 0) {
         if (output.length > 0) {
           this._transactions = this._transactions.concat(output);
-          if (!this._cancelling && !this._cancelled) {
-            this.push({
-              type: "transactionCount",
-              meteoraTransactionCount: this._transactions.length,
-            });
-          }
+          this.push({
+            type: "transactionCount",
+            meteoraTransactionCount: this._transactions.length,
+          });
 
           await Promise.all(
             output.map(async (positionTransaction) => {
@@ -147,9 +144,6 @@ export class MeteoraPositionStream extends Transform {
         this._transactionsProcessedCount += inputCount;
       }
       this._finish();
-    } else if (!this._cancelled) {
-      this._cancelled = true;
-      this.push(null);
     }
   }
 
@@ -166,9 +160,7 @@ export class MeteoraPositionStream extends Transform {
           this._transactionsReceivedCount = data.signatureCount;
           break;
       }
-      if (!this._cancelling && !this._cancelled) {
-        this.push(data);
-      }
+      this.push(data);
 
       return this._finish();
     }
@@ -181,6 +173,7 @@ export class MeteoraPositionStream extends Transform {
     connection: Connection,
     positionTransaction: MeteoraPositionTransaction,
   ) {
+    this._pendingPositions.push(positionTransaction.position);
     const newPositionTransactions = invertAndFillMissingFees(
       this._transactions.filter(
         (transaction) => transaction.position == positionTransaction.position,
@@ -189,13 +182,11 @@ export class MeteoraPositionStream extends Transform {
     const newPosition = new MeteoraPosition(newPositionTransactions);
 
     if (newPosition.isClosed) {
-      if (!this._cancelling && !this._cancelled) {
-        this.push({
-          type: "positionAndTransactions",
-          transactions: newPositionTransactions,
-          position: newPosition,
-        });
-      }
+      this.push({
+        type: "positionAndTransactions",
+        transactions: newPositionTransactions,
+        position: newPosition,
+      });
     } else {
       await this._updateOpenPosition(
         connection,
@@ -203,6 +194,10 @@ export class MeteoraPositionStream extends Transform {
         newPosition,
       );
     }
+    this._pendingPositions.splice(
+      this._pendingPositions.indexOf(positionTransaction.position),
+      1,
+    );
   }
 
   private async _updateOpenPosition(
@@ -211,13 +206,11 @@ export class MeteoraPositionStream extends Transform {
     position: MeteoraPosition,
   ) {
     await updateOpenPosition(connection, position);
-    if (!this._cancelling && !this._cancelled) {
-      this.push({
-        type: "positionAndTransactions",
-        transactions,
-        position,
-      });
-    }
+    this.push({
+      type: "positionAndTransactions",
+      transactions,
+      position,
+    });
   }
 
   private async _finish() {
@@ -227,9 +220,7 @@ export class MeteoraPositionStream extends Transform {
       !this._done
     ) {
       this._done = true;
-      if (!this._cancelling && !this._cancelled) {
-        this.push(null);
-      }
+      this.push(null);
     }
   }
 
@@ -251,6 +242,18 @@ export class MeteoraPositionStream extends Transform {
     chunk: MeteoraPositionStreamData | null,
     encoding?: BufferEncoding,
   ): boolean {
+    if (this._pendingPositions.length > 0) {
+      return super.push(chunk, encoding);
+    }
+    if (this._cancelling && !this._cancelled) {
+      this._cancelled = true;
+
+      return super.push(null);
+    }
+    if (this._cancelled) {
+      return false;
+    }
+
     return super.push(chunk, encoding);
   }
 }

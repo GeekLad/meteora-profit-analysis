@@ -9,7 +9,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix"
+    "lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix",
+    "tokens": "cd services && bun run ./SaveTokenCache.ts"
   },
   "dependencies": {
     "@debridge-finance/solana-transaction-parser": "^2.0.1",

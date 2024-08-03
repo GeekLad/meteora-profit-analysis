@@ -16,7 +16,10 @@ import {
 import { getPriceOfBinByBinId, IDL as meteoraIdl } from "@meteora-ag/dlmm";
 
 import { type MeteoraDlmmPair } from "./MeteoraDlmmApi";
-import { type JupiterTokenListToken } from "./JupiterTokenList";
+import {
+  getJupiterTokenListToken,
+  type JupiterTokenListToken,
+} from "./JupiterTokenList";
 import { unique } from "./util";
 import { getParsedAccountInfo } from "./ConnectionThrottle";
 
@@ -413,23 +416,40 @@ function decodeMeteoraInstruction(
   );
 }
 
-function addSyntheticToken(
+function addToken(
   mint: string,
   decimals: number,
   tokenMap: Map<string, JupiterTokenListToken>,
 ) {
   const newToken: JupiterTokenListToken = {
     address: mint,
-    chainId: 0,
-    decimals,
     name: mint,
     symbol: mint,
+    decimals,
+    logoURI: mint,
     tags: [],
+    daily_volume: 0,
   };
 
   tokenMap.set(mint, newToken);
 
   return newToken;
+}
+
+async function getToken(
+  connection: Connection,
+  mint: string,
+  tokenMap: Map<string, JupiterTokenListToken>,
+) {
+  const token = await getJupiterTokenListToken(mint);
+
+  if (token) {
+    tokenMap.set(token.address, token);
+
+    return token;
+  }
+
+  return getSyntheticToken(connection, mint, tokenMap);
 }
 
 async function getSyntheticToken(
@@ -444,7 +464,7 @@ async function getSyntheticToken(
   const mintData = mintAccountInfo.value!.data as ParsedAccountData;
   const decimals = mintData.parsed.info.decimals as number;
 
-  return addSyntheticToken(mint, decimals, tokenMap);
+  return addToken(mint, decimals, tokenMap);
 }
 
 async function getMeteoraPositionTransactionsFromInstructions(
@@ -476,10 +496,10 @@ async function getMeteoraPositionTransactionsFromInstructions(
       if (pair) {
         const tokenX =
           tokenMap.get(pair.mint_x) ??
-          (await getSyntheticToken(connection, pair.mint_x, tokenMap));
+          (await getToken(connection, pair.mint_x, tokenMap));
         const tokenY =
           tokenMap.get(pair.mint_y) ??
-          (await getSyntheticToken(connection, pair.mint_y, tokenMap));
+          (await getToken(connection, pair.mint_y, tokenMap));
         const pairName = pair.name;
         const mintX = pair.mint_x;
         const mintY = pair.mint_y;

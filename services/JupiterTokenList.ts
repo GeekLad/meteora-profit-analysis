@@ -1,51 +1,59 @@
-import { cachedRequest, type UnifiedFetcher } from "./util";
+import pThrottle from "p-throttle";
 
-const JUPITER_TOKEN_STRICT_LIST_API = "https://token.jup.ag/strict";
-const JUPITER_TOKEN_ALL_LIST_API = "https://token.jup.ag/all";
+import { throttledCachedRequest, type UnifiedFetcher } from "./util";
+import tokens from "./tokens.json";
+
+const JUPITER_ALL_TOKENS_API = "https://tokens.jup.ag/tokens";
+const JUPITER_SINGLE_TOKEN_API = "https://tokens.jup.ag/token/";
 
 export interface JupiterTokenListToken {
   address: string;
-  chainId: number;
-  decimals: number;
   name: string;
   symbol: string;
-  logoURI?: string;
-  tags: JupiterTokenListTag[];
-  extensions?: JupiterTokenListExtensions;
+  decimals: number;
+  logoURI: string;
+  tags: string[];
+  daily_volume: number;
 }
 
-interface JupiterTokenListExtensions {
-  coingeckoId?: string;
-  isBanned?: boolean;
+const JUPITER_TOKEN_LIST_API_THROTTLE = pThrottle({
+  limit: 1,
+  interval: 2500,
+  strict: true,
+});
+
+export async function getFullJupiterTokenList() {
+  const response = await fetch(JUPITER_ALL_TOKENS_API);
+  const responseText = await response.text();
+
+  return JSON.parse(responseText) as JupiterTokenListToken[];
 }
 
-enum JupiterTokenListTag {
-  Community = "community",
-  OldRegistry = "old-registry",
-  SolanaFm = "solana-fm",
-  Token2022 = "token-2022",
-  Unknown = "unknown",
-  Wormhole = "wormhole",
+export function getCachedJupiterTokenList() {
+  const map: Map<string, JupiterTokenListToken> = new Map();
+
+  (tokens as JupiterTokenListToken[]).forEach((token) =>
+    map.set(token.address, token),
+  );
+
+  return map;
 }
 
-export const getJupiterTokenList = cachedRequest(
+export const getJupiterTokenListToken = throttledCachedRequest(
   async (
+    address: string,
     fetcher: UnifiedFetcher = fetch,
-    listType: "all" | "strict" = "all",
-  ): Promise<Map<string, JupiterTokenListToken>> => {
-    const url =
-      listType == "strict"
-        ? JUPITER_TOKEN_STRICT_LIST_API
-        : JUPITER_TOKEN_ALL_LIST_API;
+  ): Promise<JupiterTokenListToken | undefined> => {
+    const url = JUPITER_SINGLE_TOKEN_API + address;
 
     const response = await fetcher(url);
     const responseText = await response.text();
 
-    const tokenList = JSON.parse(responseText) as JupiterTokenListToken[];
-    const tokenMap: Map<string, JupiterTokenListToken> = new Map();
+    if (responseText == "null") {
+      return undefined;
+    }
 
-    tokenList.forEach((token) => tokenMap.set(token.address, token));
-
-    return tokenMap;
+    return JSON.parse(responseText) as JupiterTokenListToken;
   },
+  JUPITER_TOKEN_LIST_API_THROTTLE,
 );

@@ -75,9 +75,7 @@ export class ParsedTransactionStream extends Transform {
       )
       .on("end", async () => {
         this._allSignaturesFound = { type: "allSignaturesFound" };
-        if (!this._cancelling && !this._cancelled) {
-          this.push(this._allSignaturesFound);
-        }
+        this.push(this._allSignaturesFound);
 
         while (!this._processor.isComplete) {
           await this._processBatch();
@@ -93,38 +91,29 @@ export class ParsedTransactionStream extends Transform {
   }
 
   private async _processBatch() {
-    if (!this._cancelling && !this._cancelled) {
-      const { inputCount, output } = await this._processor.next();
+    const { inputCount, output } = await this._processor.next();
 
-      const parsedTransactionsWithMeta = output.filter(
-        (parsedTransaction) => parsedTransaction != null,
-      ) as ParsedTransactionWithMeta[];
+    const parsedTransactionsWithMeta = output.filter(
+      (parsedTransaction) => parsedTransaction != null,
+    ) as ParsedTransactionWithMeta[];
 
-      this._processedCount += inputCount;
+    this._processedCount += inputCount;
 
-      if (parsedTransactionsWithMeta.length > 0) {
-        if (!this._cancelling && !this._cancelled) {
-          this.push({
-            type: "parsedTransaction",
-            parsedTransactionsWithMeta,
-          });
-        }
-      }
-      this._finish();
-    } else if (!this._cancelled) {
-      this._cancelled = true;
-      this.push(null);
+    if (parsedTransactionsWithMeta.length > 0) {
+      this.push({
+        type: "parsedTransaction",
+        parsedTransactionsWithMeta,
+      });
     }
+    this._finish();
   }
 
   private async _processSignatures(signatures: ConfirmedSignatureInfo[]) {
     this._signatureCount += signatures.length;
-    if (!this._cancelling && !this._cancelled) {
-      this.push({
-        type: "signatureCount",
-        signatureCount: this._signatureCount,
-      });
-    }
+    this.push({
+      type: "signatureCount",
+      signatureCount: this._signatureCount,
+    });
     const signatureStrings = signatures.map((signature) => signature.signature);
 
     this._processor.addBatch(signatureStrings);
@@ -160,6 +149,16 @@ export class ParsedTransactionStream extends Transform {
     chunk: ParsedTransactionStreamData | null,
     encoding?: BufferEncoding,
   ): boolean {
+    if (this._cancelling) {
+      if (!this._cancelled) {
+        this._cancelled = true;
+
+        return this.push(null);
+      }
+
+      return false;
+    }
+
     return super.push(chunk, encoding);
   }
 }
