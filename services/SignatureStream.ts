@@ -65,7 +65,13 @@ export class SignatureStream extends Transform {
         );
 
         if (validSignatures.length > 0) {
-          const chunks = chunkArray(validSignatures, CHUNK_SIZE);
+          const chunks =
+            validSignatures.length > CHUNK_SIZE
+              ? chunkArray(
+                  validSignatures,
+                  Math.floor(validSignatures.length / 2),
+                )
+              : [validSignatures];
 
           chunks.forEach((chunk) => this.push(chunk));
         }
