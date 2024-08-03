@@ -29,6 +29,7 @@ async function saveTokenCache() {
     tokenAddresses.includes(token.address),
   );
 
+  // @ts-ignore
   Bun.write("./tokens.json", JSON.stringify(dlmmTokens));
 }
 
