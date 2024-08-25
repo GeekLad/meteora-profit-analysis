@@ -37,6 +37,7 @@ type MeteoraPositionInstruction =
   | "removeLiquidityByRange"
   | "removeLiquidity"
   | "RemoveLiquidity"
+  | "removeLiquiditySingleSide"
   | "closePosition";
 
 export type MeteoraPositionAction =
@@ -59,6 +60,7 @@ const INSTRUCTION_MAP: Map<MeteoraPositionInstruction, MeteoraPositionAction> =
     ["removeLiquidityByRange", "remove"],
     ["removeLiquidity", "remove"],
     ["RemoveLiquidity", "remove"],
+    ["removeLiquiditySingleSide", "remove"],
     ["closePosition", "close"],
   ]);
 
