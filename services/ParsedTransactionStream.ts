@@ -1,32 +1,33 @@
-import type {
+import { Transform } from "stream";
+
+import {
   Connection,
   ConfirmedSignatureInfo,
   ParsedTransactionWithMeta,
+  PublicKey,
 } from "@solana/web3.js";
 
-import { Transform } from "stream";
+import {
+  getConfirmedSignaturesForAddress2,
+  getParsedTransactions,
+} from "./ConnectionThrottle";
+import { chunkArray } from "./util";
 
-import { SignatureStream } from "./SignatureStream";
-import { getParsedTransactions } from "./ConnectionThrottle";
-import { AsyncBatchProcessor, delay } from "./util";
+const CHUNK_SIZE = 500;
 
 export interface ParsedTransactionStreamSignatureCount {
   type: "signatureCount";
   signatureCount: number;
 }
 
-export interface ParsedTransactionStreamAllTransactionsFound {
-  type: "allSignaturesFound";
-}
-
 interface ParsedTransactionStreamParsedTransactionWithMeta {
-  type: "parsedTransaction";
+  type: "parsedTransactions";
+  signaturesProcessedCount: number;
   parsedTransactionsWithMeta: ParsedTransactionWithMeta[];
 }
 
 export type ParsedTransactionStreamData =
   | ParsedTransactionStreamSignatureCount
-  | ParsedTransactionStreamAllTransactionsFound
   | ParsedTransactionStreamParsedTransactionWithMeta;
 
 interface ParsedTransactionStreamEvents {
@@ -37,14 +38,13 @@ interface ParsedTransactionStreamEvents {
 
 export class ParsedTransactionStream extends Transform {
   private _connection: Connection;
+  private _walletAddress: PublicKey;
+  private _cancel = false;
+  private _before?: string;
+  private _until?: string;
+  private _minDate?: Date;
   private _signatureCount = 0;
-  private _processedCount = 0;
-  private _allSignaturesFound?: ParsedTransactionStreamAllTransactionsFound;
-  private _processor: AsyncBatchProcessor<
-    string,
-    ParsedTransactionWithMeta | null
-  >;
-  private _signatureStream: SignatureStream;
+  private _signaturesProcessedCount = 0;
   private _cancelling = false;
   private _cancelled = false;
 
@@ -57,55 +57,79 @@ export class ParsedTransactionStream extends Transform {
   ) {
     super({ objectMode: true });
     this._connection = connection;
-    this._processor = new AsyncBatchProcessor((signatures) =>
-      getParsedTransactions(this._connection, signatures, {
-        maxSupportedTransactionVersion: 0,
-        commitment: "confirmed",
-      }),
-    );
-    this._signatureStream = new SignatureStream(
-      connection,
-      walletAddress,
-      before,
-      until,
-      minDate,
-    )
-      .on("data", (signatures: ConfirmedSignatureInfo[]) =>
-        this._processSignatures(signatures),
-      )
-      .on("end", async () => {
-        this._allSignaturesFound = { type: "allSignaturesFound" };
-        this.push(this._allSignaturesFound);
+    this._walletAddress = new PublicKey(walletAddress);
+    this._before = before;
+    this._until = until;
+    this._minDate = minDate;
+    this._fetchSignatures();
+  }
 
-        while (!this._processor.isComplete) {
-          await this._processBatch();
-          await delay(0);
+  private async _fetchSignatures() {
+    let newSignatures: ConfirmedSignatureInfo[] = [];
+    let lastDate = new Date();
+
+    do {
+      newSignatures = await getConfirmedSignaturesForAddress2(
+        this._connection,
+        this._walletAddress,
+        {
+          before: this._before,
+          until: this._until,
+        },
+        "confirmed",
+      );
+      if (newSignatures.length > 0) {
+        const validSignatures = newSignatures.filter(
+          (signature) => !signature.err,
+        );
+
+        if (validSignatures.length > 0) {
+          const chunks =
+            validSignatures.length > CHUNK_SIZE
+              ? chunkArray(
+                  validSignatures,
+                  Math.floor(validSignatures.length / 2),
+                )
+              : [validSignatures];
+
+          const parsedTransactionsWithMeta: ParsedTransactionWithMeta[] = [];
+
+          for (let i = 0; i < chunks.length; i++) {
+            let chunk = chunks[i];
+            let newParsedTransactionsWithMeta =
+              await this._processSignatures(chunk);
+
+            newParsedTransactionsWithMeta.forEach((parsedTransactionWithMeta) =>
+              parsedTransactionsWithMeta.push(parsedTransactionWithMeta),
+            );
+          }
+
+          if (parsedTransactionsWithMeta.length > 0) {
+            this.push({
+              type: "parsedTransactions",
+              signaturesProcessedCount: this._signaturesProcessedCount,
+              parsedTransactionsWithMeta,
+            });
+          }
         }
-      })
-      .on("error", (error) => this.emit("error", error));
+        this._before = newSignatures[newSignatures.length - 1].signature;
+        lastDate = new Date(
+          validSignatures[validSignatures.length - 1].blockTime! * 1000,
+        );
+      }
+    } while (
+      !this._cancel &&
+      newSignatures.length > 0 &&
+      (!this._minDate || (this._minDate && lastDate > this._minDate))
+    );
+    if (!this._cancelling && !this._cancelled) {
+      this.push(null);
+    }
   }
 
   cancel() {
-    this._signatureStream.cancel();
+    this._cancel = true;
     this._cancelling = true;
-  }
-
-  private async _processBatch() {
-    const { inputCount, output } = await this._processor.next();
-
-    const parsedTransactionsWithMeta = output.filter(
-      (parsedTransaction) => parsedTransaction != null,
-    ) as ParsedTransactionWithMeta[];
-
-    this._processedCount += inputCount;
-
-    if (parsedTransactionsWithMeta.length > 0) {
-      this.push({
-        type: "parsedTransaction",
-        parsedTransactionsWithMeta,
-      });
-    }
-    this._finish();
   }
 
   private async _processSignatures(signatures: ConfirmedSignatureInfo[]) {
@@ -115,20 +139,19 @@ export class ParsedTransactionStream extends Transform {
       signatureCount: this._signatureCount,
     });
     const signatureStrings = signatures.map((signature) => signature.signature);
+    const parsedTransactions = await getParsedTransactions(
+      this._connection,
+      signatureStrings,
+      {
+        maxSupportedTransactionVersion: 0,
+      },
+    );
 
-    this._processor.addBatch(signatureStrings);
-    this._processBatch();
-  }
+    this._signaturesProcessedCount += signatures.length;
 
-  private _finish() {
-    if (
-      this._allSignaturesFound &&
-      this._signatureCount == this._processedCount
-    ) {
-      if (!this._cancelling && !this._cancelled) {
-        this.push(null);
-      }
-    }
+    return parsedTransactions.filter(
+      (parsedTransaction) => parsedTransaction != null,
+    );
   }
 
   on<Event extends keyof ParsedTransactionStreamEvents>(

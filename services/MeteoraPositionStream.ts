@@ -1,11 +1,10 @@
-import type { Connection, ParsedTransactionWithMeta } from "@solana/web3.js";
+import type { Connection } from "@solana/web3.js";
 
 import { Transform } from "stream";
 
 import {
   ParsedTransactionStream,
   type ParsedTransactionStreamData,
-  type ParsedTransactionStreamAllTransactionsFound,
   type ParsedTransactionStreamSignatureCount,
 } from "./ParsedTransactionStream";
 import { getDlmmPairs, type MeteoraDlmmPair } from "./MeteoraDlmmApi";
@@ -15,8 +14,11 @@ import {
   type MeteoraPositionTransaction,
 } from "./ParseMeteoraTransactions";
 import { MeteoraPosition, invertAndFillMissingFees } from "./MeteoraPosition";
-import { AsyncBatchProcessor, delay } from "./util";
 import { updateOpenPosition } from "./UpdateOpenPositions";
+
+interface MeteoraPositionStreamAllTransactionsFound {
+  type: "allSignaturesFound";
+}
 
 interface MeteoraPositionStreamTransactionCount {
   type: "transactionCount";
@@ -36,7 +38,7 @@ interface MeteoraPositionStreamUpdatingOpenPositions {
 
 export type MeteoraPositionStreamData =
   | ParsedTransactionStreamSignatureCount
-  | ParsedTransactionStreamAllTransactionsFound
+  | MeteoraPositionStreamAllTransactionsFound
   | MeteoraPositionStreamTransactionCount
   | MeteoraPositionStreamPositionAndTransactions
   | MeteoraPositionStreamUpdatingOpenPositions;
@@ -53,12 +55,8 @@ export class MeteoraPositionStream extends Transform {
   private _transactionStream!: ParsedTransactionStream;
   private _receivedAllTransactions = false;
   private _transactionsReceivedCount = 0;
-  private _transactionsProcessedCount = 0;
+  private _signaturesProcessedCount = 0;
   private _transactions: MeteoraPositionTransaction[] = [];
-  private _processor!: AsyncBatchProcessor<
-    ParsedTransactionWithMeta,
-    MeteoraPositionTransaction
-  >;
   private _done = false;
   private _cancelling = false;
   private _cancelled = false;
@@ -92,14 +90,6 @@ export class MeteoraPositionStream extends Transform {
     const { pairs } = await getDlmmPairs();
 
     this._pairs = pairs;
-    this._processor = new AsyncBatchProcessor((parsedTransactionsWithMeta) =>
-      parseMeteoraTransactions(
-        connection,
-        this._pairs,
-        this._tokenMap,
-        parsedTransactionsWithMeta,
-      ),
-    );
 
     this._transactionStream = new ParsedTransactionStream(
       connection,
@@ -111,51 +101,20 @@ export class MeteoraPositionStream extends Transform {
       .on("data", (data) => this._parseTransactions(connection, data))
       .on("end", async () => {
         this._receivedAllTransactions = true;
-
-        while (!this._processor.isComplete) {
-          await this._processBatch(connection);
-          await delay(0);
-        }
+        this.push({
+          type: "allSignaturesFound",
+        });
+        this._finish();
       })
       .on("error", (error) => this.emit("error", error));
-  }
-
-  private async _processBatch(connection: Connection) {
-    if (!this._cancelling && !this._cancelled) {
-      const { inputCount, output } = await this._processor.next();
-
-      if (inputCount > 0) {
-        if (output.length > 0) {
-          this._transactions = this._transactions.concat(output);
-          this.push({
-            type: "transactionCount",
-            meteoraTransactionCount: this._transactions.length,
-          });
-
-          await Promise.all(
-            output.map(async (positionTransaction) => {
-              if (positionTransaction.open) {
-                await this._createPosition(connection, positionTransaction);
-              }
-            }),
-          );
-        }
-
-        this._transactionsProcessedCount += inputCount;
-      }
-      this._finish();
-    }
   }
 
   private async _parseTransactions(
     connection: Connection,
     data: ParsedTransactionStreamData,
   ) {
-    if (data.type != "parsedTransaction") {
+    if (data.type != "parsedTransactions") {
       switch (data.type) {
-        case "allSignaturesFound":
-          this._receivedAllTransactions = true;
-          break;
         case "signatureCount":
           this._transactionsReceivedCount = data.signatureCount;
           break;
@@ -164,9 +123,31 @@ export class MeteoraPositionStream extends Transform {
 
       return this._finish();
     }
+    if (!this._cancelling && !this._cancelled) {
+      const meteoraTransactions = await parseMeteoraTransactions(
+        connection,
+        this._pairs,
+        this._tokenMap,
+        data.parsedTransactionsWithMeta,
+      );
 
-    this._processor.addBatch(data.parsedTransactionsWithMeta);
-    this._processBatch(connection);
+      this._transactions = this._transactions.concat(meteoraTransactions);
+      this.push({
+        type: "transactionCount",
+        meteoraTransactionCount: this._transactions.length,
+      });
+      this._signaturesProcessedCount += data.parsedTransactionsWithMeta.length;
+
+      await Promise.all(
+        meteoraTransactions.map(async (positionTransaction) => {
+          if (positionTransaction.open) {
+            await this._createPosition(connection, positionTransaction);
+          }
+        }),
+      );
+      this._signaturesProcessedCount = data.signaturesProcessedCount;
+      this._finish();
+    }
   }
 
   private async _createPosition(
@@ -216,7 +197,7 @@ export class MeteoraPositionStream extends Transform {
   private async _finish() {
     if (
       this._receivedAllTransactions &&
-      this._transactionsReceivedCount == this._transactionsProcessedCount &&
+      this._transactionsReceivedCount == this._signaturesProcessedCount &&
       !this._done
     ) {
       this._done = true;
