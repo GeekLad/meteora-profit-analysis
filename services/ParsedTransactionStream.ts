@@ -100,7 +100,9 @@ export class ParsedTransactionStream extends Transform {
               await this._processSignatures(chunk);
 
             newParsedTransactionsWithMeta.forEach((parsedTransactionWithMeta) =>
-              parsedTransactionsWithMeta.push(parsedTransactionWithMeta),
+              parsedTransactionsWithMeta.push(
+                parsedTransactionWithMeta as ParsedTransactionWithMeta,
+              ),
             );
           }
 
