@@ -136,7 +136,6 @@ export class MeteoraPositionStream extends Transform {
         type: "transactionCount",
         meteoraTransactionCount: this._transactions.length,
       });
-      this._signaturesProcessedCount += data.parsedTransactionsWithMeta.length;
 
       await Promise.all(
         meteoraTransactions.map(async (positionTransaction) => {
@@ -145,7 +144,7 @@ export class MeteoraPositionStream extends Transform {
           }
         }),
       );
-      this._signaturesProcessedCount = data.signaturesProcessedCount;
+      this._signaturesProcessedCount += data.signaturesProcessedCount;
       this._finish();
     }
   }

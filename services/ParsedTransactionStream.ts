@@ -44,7 +44,6 @@ export class ParsedTransactionStream extends Transform {
   private _until?: string;
   private _minDate?: Date;
   private _signatureCount = 0;
-  private _signaturesProcessedCount = 0;
   private _cancelling = false;
   private _cancelled = false;
 
@@ -92,26 +91,10 @@ export class ParsedTransactionStream extends Transform {
                 )
               : [validSignatures];
 
-          const parsedTransactionsWithMeta: ParsedTransactionWithMeta[] = [];
-
           for (let i = 0; i < chunks.length; i++) {
             let chunk = chunks[i];
-            let newParsedTransactionsWithMeta =
-              await this._processSignatures(chunk);
 
-            newParsedTransactionsWithMeta.forEach((parsedTransactionWithMeta) =>
-              parsedTransactionsWithMeta.push(
-                parsedTransactionWithMeta as ParsedTransactionWithMeta,
-              ),
-            );
-          }
-
-          if (parsedTransactionsWithMeta.length > 0) {
-            this.push({
-              type: "parsedTransactions",
-              signaturesProcessedCount: this._signaturesProcessedCount,
-              parsedTransactionsWithMeta,
-            });
+            await this._processSignatures(chunk);
           }
         }
         this._before = newSignatures[newSignatures.length - 1].signature;
@@ -149,11 +132,17 @@ export class ParsedTransactionStream extends Transform {
       },
     );
 
-    this._signaturesProcessedCount += signatures.length;
-
-    return parsedTransactions.filter(
+    const parsedTransactionsWithMeta = parsedTransactions.filter(
       (parsedTransaction) => parsedTransaction != null,
-    );
+    ) as ParsedTransactionWithMeta[];
+
+    if (parsedTransactionsWithMeta.length > 0) {
+      this.push({
+        type: "parsedTransactions",
+        signaturesProcessedCount: signatures.length,
+        parsedTransactionsWithMeta,
+      });
+    }
   }
 
   on<Event extends keyof ParsedTransactionStreamEvents>(
