@@ -5,18 +5,15 @@ import {
   parseDate,
 } from "@internationalized/date";
 
-import { MeteoraPosition } from "@/services/MeteoraPosition";
-
 export const PositionDateRangePicker = (props: {
   hidden?: boolean;
-  positions: MeteoraPosition[];
-  start: number;
-  end: number;
-  onFilter: (start: number, end: number) => any;
+  start: Date;
+  end: Date;
+  onFilter: (start: Date, end: Date) => any;
 }) => {
   const dateRange = {
-    start: parseDate(new Date(props.start).toISOString().substring(0, 10)),
-    end: parseDate(new Date(props.end).toISOString().substring(0, 10)),
+    start: parseDate(props.start.toISOString().substring(0, 10)),
+    end: parseDate(props.end.toISOString().substring(0, 10)),
   } as RangeValue<CalendarDate>;
 
   if (props.hidden) {
@@ -25,8 +22,8 @@ export const PositionDateRangePicker = (props: {
 
   function updateDates(range: RangeValue<CalendarDate>) {
     if (range && range.end && range.start) {
-      const start = range.start.toDate(getLocalTimeZone()).getTime();
-      const end = range.end.toDate(getLocalTimeZone()).getTime();
+      const start = range.start.toDate(getLocalTimeZone());
+      const end = range.end.toDate(getLocalTimeZone());
 
       props.onFilter(start, end);
     }

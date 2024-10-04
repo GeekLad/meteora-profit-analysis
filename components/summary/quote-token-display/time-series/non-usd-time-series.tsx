@@ -8,27 +8,25 @@ import {
   YAxis,
 } from "recharts";
 
-import QuoteTokenProfit from "@/services/QuoteTokenProfits";
+import { QuoteTokenSummary } from "@/components/summary/generate-summary";
 
-export const QuoteProfitTimeSeries = (props: {
-  quoteTokenProfit: QuoteTokenProfit;
-}) => {
-  const data = props.quoteTokenProfit.cumulativeProfit;
-  const minTimestamp = Math.min(...data.map((d) => d["Close/Claim Date"]));
-  const maxTimestamp = Math.max(...data.map((d) => d["Close/Claim Date"]));
+export const NonUsdTimeSeries = (props: { summary: QuoteTokenSummary }) => {
+  const data = props.summary.transactionTimeSeries;
+  const minTimestamp = Math.min(...data.map((d) => d["blockTime"]));
+  const maxTimestamp = Math.max(...data.map((d) => d["blockTime"]));
 
   return (
     <div className="col-span-2 md:m-4 sm:mt-4">
       <div className="text-center">
-        Cumulative {props.quoteTokenProfit.quoteToken.symbol} Profit
+        Cumulative {props.summary.token.symbol} Profit
       </div>
       <ResponsiveContainer height={200}>
         <LineChart data={data}>
           <XAxis
-            dataKey="Close/Claim Date"
+            dataKey="blockTime"
             domain={[minTimestamp, maxTimestamp]}
             tickFormatter={(timestamp) =>
-              new Date(timestamp).toLocaleDateString()
+              new Date(timestamp * 1000).toLocaleDateString()
             }
             type="number"
           />
@@ -37,12 +35,13 @@ export const QuoteProfitTimeSeries = (props: {
               angle={-90}
               position="insideLeft"
               style={{ textAnchor: "middle" }}
-              value={`Cumulative ${props.quoteTokenProfit.quoteToken.symbol} Profit`}
+              value={`Cumulative ${props.summary.token.symbol} Profit`}
             />
           </YAxis>
           <Line
-            dataKey="Cumulative Profit"
+            dataKey="profit"
             dot={false}
+            name={`Cumulative ${props.summary.token.symbol} Profit`}
             stroke="#8884d8"
             type="monotone"
           />
@@ -51,9 +50,9 @@ export const QuoteProfitTimeSeries = (props: {
               value.toLocaleString(Intl.NumberFormat().resolvedOptions().locale)
             }
             labelFormatter={(timestamp) =>
-              new Date(timestamp).toLocaleDateString() +
+              new Date(timestamp * 1000).toLocaleDateString() +
               " " +
-              new Date(timestamp).toLocaleTimeString()
+              new Date(timestamp * 1000).toLocaleTimeString()
             }
             labelStyle={{ color: "black" }}
           />
