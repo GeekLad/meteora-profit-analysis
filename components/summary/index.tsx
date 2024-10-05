@@ -36,12 +36,18 @@ export const Summary = (props: {
 
   function getDefaultFilter(): TransactionFilter {
     return {
-      startDate: new Date(
-        Math.min(...allTransactions.map((tx) => tx.block_time * 1000)),
-      ),
-      endDate: new Date(
-        Math.max(...allTransactions.map((tx) => tx.block_time * 1000)),
-      ),
+      startDate:
+        allTransactions.length > 0
+          ? new Date(
+              Math.min(...allTransactions.map((tx) => tx.block_time * 1000)),
+            )
+          : new Date("11/03/2023"),
+      endDate:
+        allTransactions.length > 0
+          ? new Date(
+              Math.max(...allTransactions.map((tx) => tx.block_time * 1000)),
+            )
+          : new Date(),
       positionStatus: "all",
       hawksight: "include",
       baseTokenMints: new Set(allTransactions.map((tx) => tx.base_mint)),
@@ -76,31 +82,32 @@ export const Summary = (props: {
     [],
   );
 
-  const readData = useCallback(
-    async (walletAddress: string) => {
-      while (!isDone()) {
-        const start = Date.now();
-        const latestTransactions = props.db
-          .getTransactions()
-          .filter((tx) => tx.owner_address == walletAddress);
-
-        setSummary(generateSummary(latestTransactions));
-        setAllTransactions(latestTransactions);
-        filterTransactions(latestTransactions);
-        const delayMs = 4 * (Date.now() - start);
-
-        await delay(delayMs);
-      }
-      const finalTransactions = props.db
+  const readData = useCallback(async (walletAddress: string) => {
+    while (!isDone()) {
+      const start = Date.now();
+      const latestTransactions = props.db
         .getTransactions()
         .filter((tx) => tx.owner_address == walletAddress);
 
-      setSummary(generateSummary(finalTransactions));
-      setAllTransactions(finalTransactions);
-      filterTransactions(finalTransactions);
-    },
-    [props.db, filterTransactions],
-  );
+      setSummary(generateSummary(latestTransactions));
+      setAllTransactions(latestTransactions);
+      filterTransactions(latestTransactions);
+      const dbReadTime = Date.now() - start;
+      const delayMs = Math.min(5000, 3 * dbReadTime);
+
+      console.log(
+        `${dbReadTime}ms database read time, delaying ${delayMs}ms for next database read.`,
+      );
+      await delay(delayMs);
+    }
+    const finalTransactions = props.db
+      .getTransactions()
+      .filter((tx) => tx.owner_address == walletAddress);
+
+    setSummary(generateSummary(finalTransactions));
+    setAllTransactions(finalTransactions);
+    filterTransactions(finalTransactions);
+  }, []);
 
   function isDone() {
     return (
@@ -142,7 +149,7 @@ export const Summary = (props: {
             toggleUsd={() => setDisplayUsd(!displayUsd)}
           />
         </div>
-        {Array.from(summary.quote.values()).map((summary) => (
+        {Array.from(filteredSummary.quote.values()).map((summary) => (
           <QuoteTokenDisplay
             key={summary.token.mint}
             displayUsd={displayUsd}
