@@ -47,19 +47,18 @@ export interface SummaryData {
   usdFees: number;
   usdImpermanentLoss: number;
   usdProfit: number;
+  startDate: Date;
+  endDate: Date;
   quote: Map<string, QuoteTokenSummary>;
 }
 
-interface SummaryState {
-  allData: SummaryData;
-  filteredData: SummaryData;
-  filter: (filteredTransactions: MeteoraDlmmDbTransactions[]) => any;
-}
-
+export type PositionStatus = "all" | "open" | "closed";
+export type HawksightStatus = "include" | "exclude" | "hawksightOnly";
 export interface TransactionFilter {
   startDate: Date;
   endDate: Date;
-  positionStatus: "all" | "open" | "closed";
+  positionStatus: PositionStatus;
+  hawksight: HawksightStatus;
   baseTokenMints: Set<string>;
   quoteTokenMints: Set<string>;
 }
@@ -75,6 +74,8 @@ export function generateSummary(
     usdImpermanentLoss: 0,
     usdProfit: 0,
     quote: new Map(),
+    startDate: new Date(),
+    endDate: new Date(),
   };
 
   const positions: Set<string> = new Set();
@@ -123,6 +124,36 @@ export function generateSummary(
           .map((quoteSummary) => quoteSummary.summary.usdProfit)
           .reduce((total, current) => total + current)
       : 0;
+
+  summary.quote = new Map(
+    Array.from(summary.quote.values())
+      .sort((a, b) => b.summary.transactionCount - a.summary.transactionCount)
+      .map((s) => [s.token.mint, s]),
+  );
+
+  summary.startDate = new Date(
+    Math.min(
+      ...Array.from(summary.quote.values())
+        .map((s) => s.transactionTimeSeries.map((t) => t.blockTime * 1000))
+        .flat(),
+    ),
+  );
+
+  summary.startDate = new Date(
+    Math.min(
+      ...Array.from(summary.quote.values())
+        .map((s) => s.transactionTimeSeries.map((t) => t.blockTime * 1000))
+        .flat(),
+    ),
+  );
+
+  summary.endDate = new Date(
+    Math.max(
+      ...Array.from(summary.quote.values())
+        .map((s) => s.transactionTimeSeries.map((t) => t.blockTime * 1000))
+        .flat(),
+    ),
+  );
 
   return summary;
 }
