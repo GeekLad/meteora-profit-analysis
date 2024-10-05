@@ -44,7 +44,7 @@ export const QuoteTokenBarChartNonUsd = (props: {
             {` ${props.summary.token.symbol}`}
           </p>
           <p>
-            Divergence Loss:{" "}
+            Impermanent Loss:{" "}
             {impermanentLoss.toLocaleString(
               Intl.NumberFormat().resolvedOptions().locale,
             )}

@@ -46,7 +46,7 @@ export const QuoteTokenBarChartUsd = (props: {
             {" USD"}
           </p>
           <p>
-            Divergence Loss:{" "}
+            Impermanent Loss:{" "}
             {usdImpermanentLoss.toLocaleString(
               Intl.NumberFormat().resolvedOptions().locale,
             )}

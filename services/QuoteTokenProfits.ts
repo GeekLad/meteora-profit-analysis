@@ -13,8 +13,8 @@ export interface TokenProfitDataPoint {
   Fees: number;
   "Fees in USD": null | number;
   "Rewards in USD": null | number;
-  "Divergence Loss": number;
-  "Divergence Loss in USD": null | number;
+  "Impermanent Loss": number;
+  "Impermanent Loss in USD": null | number;
   "Total Profit": number;
   "Total Profit in USD": null | number;
 }
@@ -167,9 +167,9 @@ export default class QuoteTokenProfit {
         Fees: pairGroup.totalFees,
         "Fees in USD": pairGroup.usdTotalFees,
         "Rewards in USD": pairGroup.usdTotalRewards,
-        "Divergence Loss": pairGroup.divergenceLoss,
+        "Impermanent Loss": pairGroup.divergenceLoss,
         "Total Deposits": pairGroup.totalDeposits,
-        "Divergence Loss in USD": pairGroup.usdDivergenceLoss,
+        "Impermanent Loss in USD": pairGroup.usdDivergenceLoss,
         "Total Deposits in USD": pairGroup.usdTotalDeposits,
         "Total Profit": pairGroup.totalProfit,
         "Total Profit Percent": pairGroup.profitPercent,
