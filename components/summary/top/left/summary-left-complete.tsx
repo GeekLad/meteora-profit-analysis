@@ -11,7 +11,7 @@ export const SummaryLeftComplete = (props: {
   downloader: MeteoraDownloaderStream;
 }) => {
   return (
-    <Card className="md:m-4 sm:mb-4">
+    <Card>
       <CardBody>
         <LoadingItem
           title="Time Elapsed"

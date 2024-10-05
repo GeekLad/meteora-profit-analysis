@@ -19,7 +19,7 @@ export const SummaryRightComplete = (props: {
     props.downloader.stats.positionsComplete
   ) {
     return (
-      <Card className="md:m-4 sm:mb-4 self-start">
+      <Card className="self-start">
         <CardBody>
           <LoadingItem
             loading={!props.done}

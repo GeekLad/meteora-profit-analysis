@@ -5,10 +5,9 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import MeteoraDownloader from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 import { useRouter } from "next/router";
 
+import { SummaryTop } from "@/components/summary/top";
 import { QuoteTokenDisplay } from "@/components/summary/quote-token-display";
 import { Filter } from "@/components/summary/filter";
-import { SummaryLeft } from "@/components/summary/left";
-import { SummaryRight } from "@/components/summary/right";
 import {
   generateSummary,
   TransactionFilter,
@@ -32,24 +31,27 @@ export const Summary = (props: {
   );
   const [cancelled, setCancelled] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const [filter, setTransactionFilter] = useState({
-    startDate: new Date("11/06/2023"),
-    endDate: new Date(),
-    positionStatus: "all" as "all" | "open" | "closed",
-    baseTokenMints: new Set(initialTransactions.map((tx) => tx.base_mint)),
-    quoteTokenMints: new Set(initialTransactions.map((tx) => tx.quote_mint)),
-  });
+  const [filter, setTransactionFilter] = useState(getDefaultFilter());
   const [displayUsd, setDisplayUsd] = useState(false);
+
+  function getDefaultFilter(): TransactionFilter {
+    return {
+      startDate: new Date(
+        Math.min(...allTransactions.map((tx) => tx.block_time * 1000)),
+      ),
+      endDate: new Date(
+        Math.max(...allTransactions.map((tx) => tx.block_time * 1000)),
+      ),
+      positionStatus: "all",
+      hawksight: "include",
+      baseTokenMints: new Set(allTransactions.map((tx) => tx.base_mint)),
+      quoteTokenMints: new Set(allTransactions.map((tx) => tx.quote_mint)),
+    } as TransactionFilter;
+  }
 
   const filterTransactions = useCallback(
     (transactions: MeteoraDlmmDbTransactions[], filter?: TransactionFilter) => {
-      const transactionFilter = filter || {
-        startDate: new Date("11/06/2023"),
-        endDate: new Date(),
-        positionStatus: "all" as "all" | "open" | "closed",
-        baseTokenMints: new Set(transactions.map((tx) => tx.base_mint)),
-        quoteTokenMints: new Set(transactions.map((tx) => tx.quote_mint)),
-      };
+      const transactionFilter = filter || getDefaultFilter();
       const filteredTransactions = transactions.filter((tx) => {
         if (tx.block_time < transactionFilter.startDate.getTime() / 1000)
           return false;
@@ -77,19 +79,24 @@ export const Summary = (props: {
   const readData = useCallback(
     async (walletAddress: string) => {
       while (!isDone()) {
+        const start = Date.now();
         const latestTransactions = props.db
           .getTransactions()
           .filter((tx) => tx.owner_address == walletAddress);
 
         setSummary(generateSummary(latestTransactions));
+        setAllTransactions(latestTransactions);
         filterTransactions(latestTransactions);
-        await delay(2500);
+        const delayMs = 4 * (Date.now() - start);
+
+        await delay(delayMs);
       }
       const finalTransactions = props.db
         .getTransactions()
         .filter((tx) => tx.owner_address == walletAddress);
 
       setSummary(generateSummary(finalTransactions));
+      setAllTransactions(finalTransactions);
       filterTransactions(finalTransactions);
     },
     [props.db, filterTransactions],
@@ -119,19 +126,15 @@ export const Summary = (props: {
     <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
       <div className="w-full">
         <div className="md:grid grid-flow-cols grid-cols-2 items-start">
-          <SummaryLeft
-            data={filteredSummary}
-            done={isDone()}
-            downloader={props.downloader}
-          />
-          <SummaryRight
+          <SummaryTop
             cancel={() => cancel()}
+            cancelled={cancelled}
             data={filteredSummary}
             done={isDone()}
             downloader={props.downloader}
           />
           <Filter
-            allTransactions={allTransactions}
+            data={filteredSummary}
             filter={filter}
             filterTransactions={(filter) =>
               filterTransactions(allTransactions, filter)

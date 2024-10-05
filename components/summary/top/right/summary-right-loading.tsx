@@ -2,7 +2,7 @@ import { Button, Card, CardBody } from "@nextui-org/react";
 import MeteoraDownloader from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 import { useState } from "react";
 
-import { SummaryData } from "../generate-summary";
+import { SummaryData } from "../../generate-summary";
 
 export const SummaryRightLoading = (props: {
   done: boolean;
@@ -20,7 +20,7 @@ export const SummaryRightLoading = (props: {
   }
 
   return (
-    <Card className={`md:m-4 sm:mb-4 self-start}`}>
+    <Card className="self-start">
       <CardBody>
         <p className="mb-4">
           <b>Oldest position transaction:</b>{" "}
