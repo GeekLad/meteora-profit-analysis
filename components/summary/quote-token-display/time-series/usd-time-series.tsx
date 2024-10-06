@@ -45,7 +45,10 @@ export const UsdTimeSeries = (props: { summary: QuoteTokenSummary }) => {
           />
           <Tooltip
             formatter={(value) =>
-              value.toLocaleString(Intl.NumberFormat().resolvedOptions().locale)
+              value.toLocaleString(
+                Intl.NumberFormat().resolvedOptions().locale,
+                { style: "currency", currency: "USD" },
+              )
             }
             labelFormatter={(timestamp) =>
               new Date(timestamp * 1000).toLocaleDateString() +

@@ -29,35 +29,55 @@ export const QuoteTokenBarChartUsd = (props: {
       const profitPercent = usdProfit / usdDeposits;
 
       return (
-        <div className="bg-white text-black">
+        <div className="bg-white text-black p-2">
           <p className="font-bold">{tooltipProps.label}</p>
           <p>
             Total Deposits:{" "}
             {usdDeposits.toLocaleString(
               Intl.NumberFormat().resolvedOptions().locale,
+              {
+                style: "currency",
+                currency: "USD",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              },
             )}
-            {" USD"}
           </p>
           <p>
             Fees:{" "}
             {usdFees.toLocaleString(
               Intl.NumberFormat().resolvedOptions().locale,
+              {
+                style: "currency",
+                currency: "USD",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              },
             )}
-            {" USD"}
           </p>
           <p>
             Impermanent Loss:{" "}
             {usdImpermanentLoss.toLocaleString(
               Intl.NumberFormat().resolvedOptions().locale,
+              {
+                style: "currency",
+                currency: "USD",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              },
             )}
-            {" USD"}
           </p>
           <p className="font-bold">
             Net Profit:{" "}
             {usdProfit.toLocaleString(
               Intl.NumberFormat().resolvedOptions().locale,
+              {
+                style: "currency",
+                currency: "USD",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              },
             )}
-            {" USD"}
           </p>
           <p className="font-bold">
             Profit %:{" "}
@@ -87,9 +107,7 @@ export const QuoteTokenBarChartUsd = (props: {
 
   return (
     <div className="col-span-2 md:m-4 sm:mt-4">
-      <div className="text-center">
-        {props.summary.token.symbol} Profit by Token
-      </div>
+      <div className="text-center">USD Profit by Token</div>
       <ResponsiveContainer height={200}>
         <BarChart data={data}>
           <XAxis dataKey="symbol" />
@@ -98,7 +116,7 @@ export const QuoteTokenBarChartUsd = (props: {
               angle={-90}
               position="insideLeft"
               style={{ textAnchor: "middle" }}
-              value={`Total ${props.summary.token.symbol} Profit`}
+              value="Total USD Profit"
             />
           </YAxis>
           <Tooltip
@@ -108,7 +126,15 @@ export const QuoteTokenBarChartUsd = (props: {
               <ProfitTooltip />
             }
             formatter={(value) =>
-              value.toLocaleString(Intl.NumberFormat().resolvedOptions().locale)
+              value.toLocaleString(
+                Intl.NumberFormat().resolvedOptions().locale,
+                {
+                  style: "currency",
+                  currency: "USD",
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                },
+              )
             }
             labelStyle={{ color: "black" }}
           />
