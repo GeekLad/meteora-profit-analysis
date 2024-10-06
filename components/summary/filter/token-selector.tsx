@@ -23,7 +23,11 @@ export const TokenSelector = (props: {
   baseTokenList: boolean;
   onFilter: (selectedTokens: Selection) => any;
 }) => {
-  const tokens: Token[] = applyFilter(props.allTransactions, props.filter)
+  const tokens: Token[] = applyFilter(
+    props.allTransactions,
+    props.filter,
+    false,
+  )
     .map((tx) => {
       return {
         mint: props.baseTokenList ? tx.base_mint : tx.quote_mint,

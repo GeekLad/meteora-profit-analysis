@@ -319,6 +319,7 @@ function summarizeToken(
 export function applyFilter(
   transactions: MeteoraDlmmDbTransactions[],
   transactionFilter: TransactionFilter,
+  applyTokenFilters = true,
 ) {
   return transactions.filter((tx) => {
     if (tx.block_time < transactionFilter.startDate.getTime() / 1000)
@@ -333,6 +334,7 @@ export function applyFilter(
       return false;
     if (transactionFilter.hawksight == "hawksightOnly" && !tx.is_hawksight)
       return false;
+    if (!applyTokenFilters) return true;
     if (!transactionFilter.baseTokenMints.has(tx.base_mint)) return false;
     if (!transactionFilter.quoteTokenMints.has(tx.quote_mint)) return false;
 
