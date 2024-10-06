@@ -4,6 +4,8 @@ import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora
 
 import { PositionStatusDropdown } from "./position-status";
 import { HawksightDropdown } from "./hawksight";
+import { DownloadCsvButton } from "./download-transactions";
+import { DownloadDatabase } from "./download-database";
 
 import { PositionDateRangePicker } from "@/components/summary/filter/date-range-picker";
 import { TokenSelector } from "@/components/summary/filter/token-selector";
@@ -15,6 +17,7 @@ import {
 export const Filter = (props: {
   data: SummaryData;
   allTransactions: MeteoraDlmmDbTransactions[];
+  done: boolean;
   filter: TransactionFilter;
   filterTransactions: (filter: TransactionFilter) => any;
   reset: () => any;
@@ -29,12 +32,21 @@ export const Filter = (props: {
           Display USD
         </Switch>
         <Switch
-          className={`my-4${!filterOn ? "col-span-4" : ""}`}
+          className={`my-4${!filterOn ? "col-span-2" : ""}`}
           isSelected={filterOn}
           onClick={() => setFilterOn(!filterOn)}
         >
           Display Filters
         </Switch>
+        <DownloadDatabase
+          allTransactions={props.allTransactions}
+          done={props.done}
+        />
+        <DownloadCsvButton
+          allTransactions={props.allTransactions}
+          done={props.done}
+          filter={props.filter}
+        />
         {filterOn ? (
           <Button
             className="w-1/2 my-4"
@@ -47,7 +59,7 @@ export const Filter = (props: {
         ) : (
           <></>
         )}
-        <span className="col-span-3" />
+        <span />
         <PositionDateRangePicker
           aria-label="Select Position Date Range"
           end={props.filter.endDate}

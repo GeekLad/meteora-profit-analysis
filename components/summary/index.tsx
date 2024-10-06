@@ -137,6 +137,7 @@ export const Summary = (props: {
           <Filter
             allTransactions={allTransactions}
             data={summary}
+            done={isDone()}
             filter={filter}
             filterTransactions={(filter) =>
               filterTransactions(allTransactions, filter)
