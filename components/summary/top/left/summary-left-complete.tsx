@@ -3,7 +3,6 @@ import MeteoraDownloaderStream from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-
 
 import { SummaryData } from "@/components/summary/generate-summary";
 import { LoadingItem } from "@/components/loading-status-item";
-import { getDurationString } from "@/services/util";
 
 export const SummaryLeftComplete = (props: {
   done: boolean;
