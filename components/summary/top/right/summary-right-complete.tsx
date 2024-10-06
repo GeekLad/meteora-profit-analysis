@@ -11,8 +11,6 @@ export const SummaryRightComplete = (props: {
   downloader: MeteoraDownloader;
   cancel: () => any;
 }) => {
-  const [cancelling, setCancelling] = useState(false);
-
   if (
     props.done ||
     props.downloader.stats.transactionDownloadCancelled ||
