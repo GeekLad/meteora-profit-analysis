@@ -316,6 +316,30 @@ function summarizeToken(
   };
 }
 
+export function applyFilter(
+  transactions: MeteoraDlmmDbTransactions[],
+  transactionFilter: TransactionFilter,
+) {
+  return transactions.filter((tx) => {
+    if (tx.block_time < transactionFilter.startDate.getTime() / 1000)
+      return false;
+    if (tx.block_time > transactionFilter.endDate.getTime() / 1000)
+      return false;
+    if (transactionFilter.positionStatus === "closed" && tx.position_is_open)
+      return false;
+    if (transactionFilter.positionStatus === "open" && !tx.position_is_open)
+      return false;
+    if (transactionFilter.hawksight == "exclude" && tx.is_hawksight)
+      return false;
+    if (transactionFilter.hawksight == "hawksightOnly" && !tx.is_hawksight)
+      return false;
+    if (!transactionFilter.baseTokenMints.has(tx.base_mint)) return false;
+    if (!transactionFilter.quoteTokenMints.has(tx.quote_mint)) return false;
+
+    return true;
+  });
+}
+
 function floor(value: number, decimals: number) {
   return Math.round(value * 10 ** decimals) / 10 ** decimals;
 }

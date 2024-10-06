@@ -11,6 +11,7 @@ import { Filter } from "@/components/summary/filter";
 import {
   generateSummary,
   TransactionFilter,
+  applyFilter,
 } from "@/components/summary/generate-summary";
 import { delay } from "@/services/util";
 
@@ -62,27 +63,8 @@ export const Summary = (props: {
   const filterTransactions = useCallback(
     (transactions: MeteoraDlmmDbTransactions[], filter?: TransactionFilter) => {
       const transactionFilter = filter || getDefaultFilter(transactions);
-      const filteredTransactions = transactions.filter((tx) => {
-        if (tx.block_time < transactionFilter.startDate.getTime() / 1000)
-          return false;
-        if (tx.block_time > transactionFilter.endDate.getTime() / 1000)
-          return false;
-        if (
-          transactionFilter.positionStatus === "closed" &&
-          tx.position_is_open
-        )
-          return false;
-        if (transactionFilter.positionStatus === "open" && !tx.position_is_open)
-          return false;
-        if (transactionFilter.hawksight == "exclude" && tx.is_hawksight)
-          return false;
-        if (transactionFilter.hawksight == "hawksightOnly" && !tx.is_hawksight)
-          return false;
-        if (!transactionFilter.baseTokenMints.has(tx.base_mint)) return false;
-        if (!transactionFilter.quoteTokenMints.has(tx.quote_mint)) return false;
 
-        return true;
-      });
+      const filteredTransactions = applyFilter(transactions, transactionFilter);
 
       setFilteredSummary(generateSummary(filteredTransactions));
       setTransactionFilter(transactionFilter);

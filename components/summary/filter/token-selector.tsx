@@ -12,6 +12,7 @@ import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora
 import {
   TransactionFilter,
   Token,
+  applyFilter,
 } from "@/components/summary/generate-summary";
 
 export const TokenSelector = (props: {
@@ -22,37 +23,7 @@ export const TokenSelector = (props: {
   baseTokenList: boolean;
   onFilter: (selectedTokens: Selection) => any;
 }) => {
-  const tokens: Token[] = props.allTransactions
-    // Filter transactions first
-    .filter((tx) => {
-      const txDate = new Date(tx.block_time * 1000);
-
-      if (txDate < props.filter.startDate) {
-        return false;
-      }
-
-      if (txDate > props.filter.endDate) {
-        return false;
-      }
-
-      if (props.filter.positionStatus == "closed" && tx.position_is_open) {
-        return false;
-      }
-
-      if (props.filter.positionStatus == "open" && !tx.position_is_open) {
-        return false;
-      }
-
-      if (props.filter.hawksight == "exclude" && tx.is_hawksight) {
-        return false;
-      }
-
-      if (props.filter.hawksight == "hawksightOnly" && !tx.is_hawksight) {
-        return false;
-      }
-
-      return true;
-    })
+  const tokens: Token[] = applyFilter(props.allTransactions, props.filter)
     .map((tx) => {
       return {
         mint: props.baseTokenList ? tx.base_mint : tx.quote_mint,

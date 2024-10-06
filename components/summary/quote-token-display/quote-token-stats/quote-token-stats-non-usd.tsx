@@ -1,6 +1,8 @@
 import { QuoteTokenSummary } from "@/components/summary/generate-summary";
 
-export const QuoteTokenStatsNonUsd = (props: { summary: QuoteTokenSummary }) => {
+export const QuoteTokenStatsNonUsd = (props: {
+  summary: QuoteTokenSummary;
+}) => {
   return (
     <div>
       <div className="columns-2 flex items-end">

@@ -5,9 +5,9 @@ import {
   DropdownMenu,
   DropdownItem,
 } from "@nextui-org/react";
+import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
 
 import { HawksightStatus } from "@/components/summary/generate-summary";
-import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
 
 export const HawksightDropdown = (props: {
   hidden?: boolean;
@@ -19,7 +19,7 @@ export const HawksightDropdown = (props: {
     return <></>;
   }
 
-  if (!props.allTransactions.some(tx => tx.is_hawksight)) {
+  if (!props.allTransactions.some((tx) => tx.is_hawksight)) {
     return <></>;
   }
 
