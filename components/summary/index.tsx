@@ -70,6 +70,10 @@ export const Summary = (props: {
           return false;
         if (transactionFilter.positionStatus === "open" && !tx.position_is_open)
           return false;
+        if (transactionFilter.hawksight == "exclude" && tx.is_hawksight)
+          return false;
+        if (transactionFilter.hawksight == "hawksightOnly" && !tx.is_hawksight)
+          return false;
         if (!transactionFilter.baseTokenMints.has(tx.base_mint)) return false;
         if (!transactionFilter.quoteTokenMints.has(tx.quote_mint)) return false;
 
@@ -122,6 +126,10 @@ export const Summary = (props: {
     setCancelled(true);
   }
 
+  function resetFilters() {
+    filterTransactions(allTransactions, getDefaultFilter());
+  }
+
   useEffect(() => {
     if (router.query.walletAddress && !initialized) {
       setInitialized(true);
@@ -141,11 +149,13 @@ export const Summary = (props: {
             downloader={props.downloader}
           />
           <Filter
+            allTransactions={allTransactions}
             data={summary}
             filter={filter}
             filterTransactions={(filter) =>
               filterTransactions(allTransactions, filter)
             }
+            reset={() => resetFilters()}
             toggleUsd={() => setDisplayUsd(!displayUsd)}
           />
         </div>

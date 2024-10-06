@@ -1,5 +1,9 @@
-import { Card, CardBody, Selection, Switch } from "@nextui-org/react";
+import { Button, Card, CardBody, Selection, Switch } from "@nextui-org/react";
 import { useState } from "react";
+import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
+
+import { PositionStatusDropdown } from "./position-status";
+import { HawksightDropdown } from "./hawksight";
 
 import { PositionDateRangePicker } from "@/components/summary/filter/date-range-picker";
 import { TokenSelector } from "@/components/summary/filter/token-selector";
@@ -10,25 +14,40 @@ import {
 
 export const Filter = (props: {
   data: SummaryData;
+  allTransactions: MeteoraDlmmDbTransactions[];
   filter: TransactionFilter;
   filterTransactions: (filter: TransactionFilter) => any;
+  reset: () => any;
   toggleUsd: () => any;
 }) => {
   const [filterOn, setFilterOn] = useState(false);
 
   return (
     <Card className="md:mb-4 sm:mb-4 md:col-span-2">
-      <CardBody className="md:grid grid-flow-cols grid-cols-5">
-        <Switch className="sm:mb-4" onClick={() => props.toggleUsd()}>
+      <CardBody className="md:grid grid-flow-cols grid-cols-6">
+        <Switch className="my-4" onClick={() => props.toggleUsd()}>
           Display USD
         </Switch>
         <Switch
-          className="sm:mb-4 col-span-4"
+          className={`my-4${!filterOn ? "col-span-4" : ""}`}
           isSelected={filterOn}
           onClick={() => setFilterOn(!filterOn)}
         >
           Display Filters
         </Switch>
+        {filterOn ? (
+          <Button
+            className="w-1/2 my-4"
+            color="danger"
+            hidden={!filterOn}
+            onClick={() => props.reset()}
+          >
+            Reset Filters
+          </Button>
+        ) : (
+          <></>
+        )}
+        <span className="col-span-3" />
         <PositionDateRangePicker
           aria-label="Select Position Date Range"
           end={props.filter.endDate}
@@ -38,9 +57,30 @@ export const Filter = (props: {
             props.filterTransactions({ ...props.filter, startDate, endDate });
           }}
         />
+        <PositionStatusDropdown
+          hidden={!filterOn}
+          status={props.filter.positionStatus}
+          onFilter={(selectedStatus) =>
+            props.filterTransactions({
+              ...props.filter,
+              positionStatus: selectedStatus,
+            })
+          }
+        />
+        <HawksightDropdown
+          allTransactions={props.allTransactions}
+          hidden={!filterOn}
+          status={props.filter.hawksight}
+          onFilter={(selectedStatus) =>
+            props.filterTransactions({
+              ...props.filter,
+              hawksight: selectedStatus,
+            })
+          }
+        />
         <TokenSelector
+          allTransactions={props.allTransactions}
           baseTokenList={false}
-          data={props.data}
           filter={props.filter}
           hidden={!filterOn}
           selectedItems={props.filter.quoteTokenMints}
@@ -52,8 +92,8 @@ export const Filter = (props: {
           }
         />
         <TokenSelector
+          allTransactions={props.allTransactions}
           baseTokenList={true}
-          data={props.data}
           filter={props.filter}
           hidden={!filterOn}
           selectedItems={props.filter.baseTokenMints}

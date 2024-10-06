@@ -7,51 +7,60 @@ import {
   Image,
 } from "@nextui-org/react";
 import { Selection } from "@react-types/shared";
+import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
 
 import {
-  SummaryData,
   TransactionFilter,
   Token,
 } from "@/components/summary/generate-summary";
 
 export const TokenSelector = (props: {
   hidden: boolean;
-  data: SummaryData;
+  allTransactions: MeteoraDlmmDbTransactions[];
   filter: TransactionFilter;
   selectedItems: Selection;
   baseTokenList: boolean;
   onFilter: (selectedTokens: Selection) => any;
 }) => {
-  const selectedItems = props.selectedItems;
-  const tokens = Array.from(props.data.quote.values())
-    // Filter quote tokens based on the filter start/end dates
-    .filter(
-      (quote) =>
-        quote.summary.endDate >= props.filter.startDate &&
-        quote.summary.startDate <= props.filter.endDate,
-    )
-    // Get the tokens
-    .map((quote) => {
-      // Get base tokens
-      if (props.baseTokenList) {
-        // Filter based on the start/end dates
-        const filteredTokens = quote.base.filter(
-          (base) =>
-            base.summary.endDate >= props.filter.startDate &&
-            base.summary.startDate <= props.filter.endDate,
-        );
+  const tokens: Token[] = props.allTransactions
+    // Filter transactions first
+    .filter((tx) => {
+      const txDate = new Date(tx.block_time * 1000);
 
-        if (filteredTokens.length == 0) {
-          return [] as Token[];
-        }
-
-        return filteredTokens.map((base) => base.token);
+      if (txDate < props.filter.startDate) {
+        return false;
       }
 
-      return quote.token;
+      if (txDate > props.filter.endDate) {
+        return false;
+      }
+
+      if (props.filter.positionStatus == "closed" && tx.position_is_open) {
+        return false;
+      }
+
+      if (props.filter.positionStatus == "open" && !tx.position_is_open) {
+        return false;
+      }
+
+      if (props.filter.hawksight == "exclude" && tx.is_hawksight) {
+        return false;
+      }
+
+      if (props.filter.hawksight == "hawksightOnly" && !tx.is_hawksight) {
+        return false;
+      }
+
+      return true;
     })
-    // If we had base tokens, we'll have an array of arrays of tokens
-    .flat()
+    .map((tx) => {
+      return {
+        mint: props.baseTokenList ? tx.base_mint : tx.quote_mint,
+        symbol: props.baseTokenList ? tx.base_symbol : tx.quote_symbol,
+        decimals: props.baseTokenList ? tx.base_decimals : tx.quote_decimals,
+        logo: props.baseTokenList ? tx.base_logo : tx.quote_logo,
+      };
+    })
     // Alphabetize
     .sort((a, b) => a.symbol.localeCompare(b.symbol))
     // Remove dupes
@@ -77,16 +86,16 @@ export const TokenSelector = (props: {
   }
 
   return (
-    <div className="m-4">
+    <div className="my-4 mr-4">
       <Dropdown shouldBlockScroll={false}>
         <DropdownTrigger>
-          <Button className="lg:w-full">
+          <Button className="lg:w-2/3">
             {props.baseTokenList ? "Base" : "Quote"} Tokens
           </Button>
         </DropdownTrigger>
         <DropdownMenu
           closeOnSelect={false}
-          selectedKeys={selectedItems}
+          selectedKeys={props.selectedItems}
           selectionMode="multiple"
           onSelectionChange={(keys) => updateTokens(keys)}
         >

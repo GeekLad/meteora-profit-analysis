@@ -30,7 +30,7 @@ export const PositionDateRangePicker = (props: {
   }
 
   return (
-    <div className="max-w-sm whitespace-nowrap col-span-2">
+    <div className="mr-4 my-4 max-w-sm whitespace-nowrap col-span-2">
       <DateRangePicker
         aria-label="Transaction Date Range"
         label="Transaction Date Range"

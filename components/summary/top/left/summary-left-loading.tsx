@@ -14,10 +14,6 @@ export const SummaryLeftLoading = (props: {
     !props.downloader.positionsComplete &&
     !props.downloader.stats.transactionDownloadCancelled;
 
-  const loadingUsd =
-    props.downloader.downloadComplete &&
-    !props.downloader.stats.transactionDownloadCancelled;
-
   return (
     <Card>
       <CardBody>
@@ -26,11 +22,6 @@ export const SummaryLeftLoading = (props: {
           value={getDurationString(
             props.downloader.stats.secondsElapsed * 1000,
           )}
-        />
-        <LoadingItem
-          hidden={loadingUsd}
-          title="Estimated Completion"
-          value="TODO: Put ETA"
         />
         <LoadingItem
           hidden={!loadingTransactions}
@@ -78,10 +69,7 @@ export const SummaryLeftLoading = (props: {
         ) : (
           <Progress
             aria-label="Loading progress"
-            isIndeterminate={
-              !props.downloader.positionsComplete &&
-              !props.downloader.stats.transactionDownloadCancelled
-            }
+            isIndeterminate={!props.downloader.positionsComplete}
             showValueLabel={true}
             value={
               (100 *
