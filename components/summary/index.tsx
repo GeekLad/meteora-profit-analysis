@@ -34,30 +34,34 @@ export const Summary = (props: {
   const [filter, setTransactionFilter] = useState(getDefaultFilter());
   const [displayUsd, setDisplayUsd] = useState(false);
 
-  function getDefaultFilter(): TransactionFilter {
+  function getDefaultFilter(
+    transactions?: MeteoraDlmmDbTransactions[],
+  ): TransactionFilter {
+    transactions = transactions ? transactions : allTransactions;
+
     return {
       startDate:
         allTransactions.length > 0
           ? new Date(
-              Math.min(...allTransactions.map((tx) => tx.block_time * 1000)),
+              Math.min(...transactions.map((tx) => tx.block_time * 1000)),
             )
           : new Date("11/03/2023"),
       endDate:
         allTransactions.length > 0
           ? new Date(
-              Math.max(...allTransactions.map((tx) => tx.block_time * 1000)),
+              Math.max(...transactions.map((tx) => tx.block_time * 1000)),
             )
           : new Date(),
       positionStatus: "all",
       hawksight: "include",
-      baseTokenMints: new Set(allTransactions.map((tx) => tx.base_mint)),
-      quoteTokenMints: new Set(allTransactions.map((tx) => tx.quote_mint)),
+      baseTokenMints: new Set(transactions.map((tx) => tx.base_mint)),
+      quoteTokenMints: new Set(transactions.map((tx) => tx.quote_mint)),
     } as TransactionFilter;
   }
 
   const filterTransactions = useCallback(
     (transactions: MeteoraDlmmDbTransactions[], filter?: TransactionFilter) => {
-      const transactionFilter = filter || getDefaultFilter();
+      const transactionFilter = filter || getDefaultFilter(transactions);
       const filteredTransactions = transactions.filter((tx) => {
         if (tx.block_time < transactionFilter.startDate.getTime() / 1000)
           return false;
