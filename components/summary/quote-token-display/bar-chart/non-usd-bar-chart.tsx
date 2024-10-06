@@ -29,7 +29,7 @@ export const QuoteTokenBarChartNonUsd = (props: {
       const profitPercent = profit / deposits;
 
       return (
-        <div className="bg-white text-black">
+        <div className="bg-white text-black p-2">
           <p className="font-bold">{tooltipProps.label}</p>
           <p>
             Total Deposits:{" "}
