@@ -141,7 +141,7 @@ export const Summary = (props: {
             downloader={props.downloader}
           />
           <Filter
-            data={filteredSummary}
+            data={summary}
             filter={filter}
             filterTransactions={(filter) =>
               filterTransactions(allTransactions, filter)

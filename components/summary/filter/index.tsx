@@ -1,8 +1,8 @@
-import { Card, CardBody, Switch } from "@nextui-org/react";
+import { Card, CardBody, Selection, Switch } from "@nextui-org/react";
 import { useState } from "react";
 
-import { PositionDateRangePicker } from "./date-range-picker";
-
+import { PositionDateRangePicker } from "@/components/summary/filter/date-range-picker";
+import { TokenSelector } from "@/components/summary/filter/token-selector";
 import {
   SummaryData,
   TransactionFilter,
@@ -34,7 +34,35 @@ export const Filter = (props: {
           end={props.filter.endDate}
           hidden={!filterOn}
           start={props.filter.startDate}
-          onFilter={() => console.log("TODO: Implement date filter")}
+          onFilter={(startDate, endDate) => {
+            props.filterTransactions({ ...props.filter, startDate, endDate });
+          }}
+        />
+        <TokenSelector
+          baseTokenList={false}
+          data={props.data}
+          filter={props.filter}
+          hidden={!filterOn}
+          selectedItems={props.filter.quoteTokenMints}
+          onFilter={(selectedTokens: Selection) =>
+            props.filterTransactions({
+              ...props.filter,
+              quoteTokenMints: selectedTokens as Set<string>,
+            })
+          }
+        />
+        <TokenSelector
+          baseTokenList={true}
+          data={props.data}
+          filter={props.filter}
+          hidden={!filterOn}
+          selectedItems={props.filter.baseTokenMints}
+          onFilter={(selectedTokens: Selection) =>
+            props.filterTransactions({
+              ...props.filter,
+              baseTokenMints: selectedTokens as Set<string>,
+            })
+          }
         />
       </CardBody>
     </Card>

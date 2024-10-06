@@ -22,6 +22,8 @@ interface TransactionSummary extends TransactionData {
   positionCount: number;
   transactionCount: number;
   usdLoadCount: number;
+  startDate: Date;
+  endDate: Date;
 }
 
 interface TransactionTimeSeriesDataPoint extends TransactionData {
@@ -180,12 +182,19 @@ function summarizeToken(
     usdFees: 0,
     usdImpermanentLoss: 0,
     usdProfit: 0,
+    startDate: new Date(),
+    endDate: new Date(),
   };
 
   const tokenTransactions = transactions.filter(
     (tx) =>
       tx.quote_mint == quoteMint &&
       (!baseMint || (baseMint && tx.base_mint == baseMint)),
+  );
+
+  summary.startDate = new Date(tokenTransactions[0].block_time * 1000);
+  summary.endDate = new Date(
+    tokenTransactions[tokenTransactions.length - 1].block_time * 1000,
   );
 
   if (tokenTransactions.length == 0) {
