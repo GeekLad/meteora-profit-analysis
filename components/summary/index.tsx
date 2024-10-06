@@ -41,13 +41,13 @@ export const Summary = (props: {
 
     return {
       startDate:
-        allTransactions.length > 0
+        transactions.length > 0
           ? new Date(
               Math.min(...transactions.map((tx) => tx.block_time * 1000)),
             )
           : new Date("11/03/2023"),
       endDate:
-        allTransactions.length > 0
+        transactions.length > 0
           ? new Date(
               Math.max(...transactions.map((tx) => tx.block_time * 1000)),
             )
