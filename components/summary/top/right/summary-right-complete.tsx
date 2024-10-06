@@ -27,8 +27,8 @@ export const SummaryRightComplete = (props: {
             value={(props.data.usdFees * 1000).toLocaleString(
               Intl.NumberFormat().resolvedOptions().locale,
               {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
               },
             )}
           />
