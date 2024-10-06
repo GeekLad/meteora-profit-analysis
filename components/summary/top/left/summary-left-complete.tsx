@@ -14,12 +14,6 @@ export const SummaryLeftComplete = (props: {
     <Card>
       <CardBody>
         <LoadingItem
-          title="Time Elapsed"
-          value={getDurationString(
-            props.downloader.stats.secondsElapsed * 1000,
-          )}
-        />
-        <LoadingItem
           loading={false}
           title={"# of Position Transactions"}
           value={props.data.positionTransactionCount}
@@ -28,6 +22,16 @@ export const SummaryLeftComplete = (props: {
           loading={false}
           title={"# of Positions"}
           value={props.data.positionCount}
+        />
+        <LoadingItem
+          loading={false}
+          title={"First Transaction"}
+          value={props.data.startDate.toLocaleDateString()}
+        />
+        <LoadingItem
+          loading={false}
+          title={"Most Recent Transaction"}
+          value={props.data.endDate.toLocaleDateString()}
         />
       </CardBody>
     </Card>

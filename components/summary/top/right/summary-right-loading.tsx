@@ -14,7 +14,8 @@ export const SummaryRightLoading = (props: {
 
   if (
     !props.downloader.stats.oldestTransactionDate ||
-    props.downloader.positionsComplete
+    props.downloader.positionsComplete ||
+    cancelling
   ) {
     return <div className="md:m-4 sm:mb-4 self-start">&nbsp;</div>;
   }

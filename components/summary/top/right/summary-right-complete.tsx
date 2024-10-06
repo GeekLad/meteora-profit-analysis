@@ -1,6 +1,5 @@
 import { Card, CardBody } from "@nextui-org/react";
 import MeteoraDownloader from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
-import { useState } from "react";
 
 import { LoadingItem } from "@/components/loading-status-item";
 import { SummaryData } from "@/components/summary/generate-summary";
