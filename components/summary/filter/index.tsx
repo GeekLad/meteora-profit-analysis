@@ -47,19 +47,21 @@ export const Filter = (props: {
           done={props.done}
           filter={props.filter}
         />
-        {filterOn ? (
-          <Button
-            className="w-1/2 my-4"
-            color="danger"
-            hidden={!filterOn}
-            onClick={() => props.reset()}
-          >
-            Reset Filters
-          </Button>
-        ) : (
-          <></>
-        )}
         <span />
+        {filterOn ? (
+          <div className="md:flex md:justify-end">
+            <Button
+              className="w-1/2 my-4"
+              color="danger"
+              hidden={!filterOn}
+              onClick={() => props.reset()}
+            >
+              Reset Filters
+            </Button>
+          </div>
+        ) : (
+          <span />
+        )}
         <PositionDateRangePicker
           aria-label="Select Position Date Range"
           end={props.filter.endDate}

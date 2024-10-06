@@ -73,6 +73,8 @@ export const Summary = (props: {
   );
 
   const readData = useCallback(async (walletAddress: string) => {
+    let loopCount = 0;
+
     while (!isDone()) {
       const start = Date.now();
       const latestTransactions = props.db
@@ -83,12 +85,13 @@ export const Summary = (props: {
       setAllTransactions(latestTransactions);
       filterTransactions(latestTransactions);
       const dbReadTime = Date.now() - start;
-      const delayMs = Math.min(5000, 3 * dbReadTime);
+      const delayMs = loopCount < 2 ? 1000 : Math.min(5000, 3 * dbReadTime);
 
       console.log(
         `${dbReadTime}ms database read time, delaying ${delayMs}ms for next database read.`,
       );
       await delay(delayMs);
+      loopCount++;
     }
     const finalTransactions = props.db
       .getTransactions()
