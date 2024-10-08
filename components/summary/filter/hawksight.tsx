@@ -27,7 +27,7 @@ export const HawksightDropdown = (props: {
     <div className="my-4 mr-4">
       <Dropdown shouldBlockScroll={false}>
         <DropdownTrigger>
-          <Button className="lg:w-2/3">Hawksight</Button>
+          <Button className="lg:w-2/3">HawkFi</Button>
         </DropdownTrigger>
         <DropdownMenu
           closeOnSelect={false}
@@ -38,13 +38,13 @@ export const HawksightDropdown = (props: {
           }
         >
           <DropdownItem key="include" textValue="include">
-            Include
+            Include HawkFi Positions
           </DropdownItem>
           <DropdownItem key="exclude" textValue="exclude">
-            Exclude
+            Exclude HawkFi Positions
           </DropdownItem>
           <DropdownItem key="hawksightOnly" textValue="hawksightOnly">
-            Hawksight Only
+            HawkFi Positions Only
           </DropdownItem>
         </DropdownMenu>
       </Dropdown>
