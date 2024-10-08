@@ -46,13 +46,13 @@ export const Summary = (props: {
           ? new Date(
               Math.min(...transactions.map((tx) => tx.block_time * 1000)),
             )
-          : new Date("11/03/2023"),
+          : new Date("11/06/2023"),
       endDate:
         transactions.length > 0
           ? new Date(
               Math.max(...transactions.map((tx) => tx.block_time * 1000)),
             )
-          : new Date(),
+          : new Date(Date.now() + 1000 * 60 * 60 * 24),
       positionStatus: "all",
       hawksight: "include",
       baseTokenMints: new Set(transactions.map((tx) => tx.base_mint)),
@@ -85,7 +85,10 @@ export const Summary = (props: {
       setAllTransactions(latestTransactions);
       filterTransactions(latestTransactions);
       const dbReadTime = Date.now() - start;
-      const delayMs = loopCount < 2 ? 1000 : Math.min(5000, 3 * dbReadTime);
+      const delayMs =
+        loopCount < 2
+          ? 1000
+          : Math.max(1.5 * dbReadTime, Math.min(5000, 3 * dbReadTime));
 
       console.log(
         `${dbReadTime}ms database read time, delaying ${delayMs}ms for next database read.`,
