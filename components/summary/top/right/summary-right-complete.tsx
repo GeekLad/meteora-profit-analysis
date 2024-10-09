@@ -1,5 +1,5 @@
 import { Card, CardBody } from "@nextui-org/react";
-import MeteoraDownloader from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
+import { MeteoraDlmmDownloaderStats } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 
 import { LoadingItem } from "@/components/loading-status-item";
 import { SummaryData } from "@/components/summary/generate-summary";
@@ -7,13 +7,13 @@ import { SummaryData } from "@/components/summary/generate-summary";
 export const SummaryRightComplete = (props: {
   done: boolean;
   data: SummaryData;
-  downloader: MeteoraDownloader;
+  stats: MeteoraDlmmDownloaderStats;
   cancel: () => any;
 }) => {
   if (
     props.done ||
-    props.downloader.stats.transactionDownloadCancelled ||
-    props.downloader.stats.positionsComplete
+    props.stats.transactionDownloadCancelled ||
+    props.stats.positionsComplete
   ) {
     return (
       <Card className="self-start">

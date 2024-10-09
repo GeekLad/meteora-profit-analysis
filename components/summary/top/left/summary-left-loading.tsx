@@ -1,33 +1,31 @@
 import { Card, CardBody, Progress } from "@nextui-org/react";
-import MeteoraDownloaderStream from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
+import { MeteoraDlmmDownloaderStats } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 
 import { SummaryData } from "@/components/summary/generate-summary";
 import { LoadingItem } from "@/components/loading-status-item";
 import { getDurationString } from "@/services/util";
 
 export const SummaryLeftLoading = (props: {
+  duration: number;
   done: boolean;
   data: SummaryData;
-  downloader: MeteoraDownloaderStream;
+  stats: MeteoraDlmmDownloaderStats;
 }) => {
   const loadingTransactions =
-    !props.downloader.positionsComplete &&
-    !props.downloader.stats.transactionDownloadCancelled;
+    !props.stats.positionsComplete && !props.stats.transactionDownloadCancelled;
 
   return (
     <Card>
       <CardBody>
         <LoadingItem
           title="Time Elapsed"
-          value={getDurationString(
-            props.downloader.stats.secondsElapsed * 1000,
-          )}
+          value={getDurationString(props.duration)}
         />
         <LoadingItem
           hidden={!loadingTransactions}
           loading={loadingTransactions}
           title="# of New Wallet Transactions"
-          value={props.downloader.stats.accountSignatureCount}
+          value={props.stats.accountSignatureCount}
         />
         <LoadingItem
           loading={loadingTransactions}
@@ -38,7 +36,7 @@ export const SummaryLeftLoading = (props: {
           }
           value={
             loadingTransactions
-              ? props.downloader.stats.positionTransactionCount
+              ? props.stats.positionTransactionCount
               : props.data.positionTransactionCount
           }
         />
@@ -47,12 +45,12 @@ export const SummaryLeftLoading = (props: {
           title={loadingTransactions ? "# of New Positions" : "# of Positions"}
           value={
             loadingTransactions
-              ? props.downloader.stats.positionCount
+              ? props.stats.positionCount
               : props.data.positionCount
           }
         />
         <LoadingItem
-          loading={!props.downloader.positionsComplete}
+          loading={!props.stats.positionsComplete}
           title={
             loadingTransactions
               ? "# of Pos. updated w/ USD"
@@ -60,28 +58,25 @@ export const SummaryLeftLoading = (props: {
           }
           value={
             loadingTransactions
-              ? props.downloader.stats.usdPositionCount
-              : props.downloader.stats.missingUsd
+              ? props.stats.usdPositionCount
+              : props.stats.missingUsd
           }
         />
-        {props.downloader.downloadComplete ? (
+        {props.stats.downloadingComplete ? (
           <></>
         ) : (
           <Progress
             aria-label="Loading progress"
-            isIndeterminate={!props.downloader.positionsComplete}
+            isIndeterminate={
+              !props.stats.positionsComplete &&
+              !props.stats.transactionDownloadCancelled
+            }
             showValueLabel={true}
             value={
               (100 *
-                (Math.max(
-                  props.data.positionCount,
-                  props.downloader.stats.positionCount,
-                ) -
-                  props.downloader.stats.missingUsd)) /
-              Math.max(
-                props.data.positionCount,
-                props.downloader.stats.positionCount,
-              )
+                (Math.max(props.data.positionCount, props.stats.positionCount) -
+                  props.stats.missingUsd)) /
+              Math.max(props.data.positionCount, props.stats.positionCount)
             }
           />
         )}

@@ -1,164 +1,194 @@
-import MeteoraDlmmDb, {
-  MeteoraDlmmDbTransactions,
-} from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
-import { useEffect, useState, useMemo, useCallback } from "react";
-import MeteoraDownloader from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
+import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/router";
+import { MeteoraDlmmDownloaderStats } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 
-import { SummaryTop } from "@/components/summary/top";
+import { FullPageSpinner } from "../full-page-spinner";
+
 import { QuoteTokenDisplay } from "@/components/summary/quote-token-display";
 import { Filter } from "@/components/summary/filter";
 import {
   generateSummary,
   TransactionFilter,
   applyFilter,
+  SummaryData,
 } from "@/components/summary/generate-summary";
-import { delay } from "@/services/util";
+import { SummaryTop } from "@/components/summary/top";
+import { DataWorkerMessage } from "@/public/workers/download-worker";
 
-export const Summary = (props: {
-  db: MeteoraDlmmDb;
-  downloader: MeteoraDownloader;
-}) => {
-  const initialTransactions = useMemo(
-    () => props.db.getTransactions(),
-    [props.db],
-  );
+export const Summary = (props: { downloadWorker: Worker }) => {
   const router = useRouter();
 
-  const [allTransactions, setAllTransactions] = useState(initialTransactions);
-  const [summary, setSummary] = useState(generateSummary(initialTransactions));
-  const [filteredSummary, setFilteredSummary] = useState(
-    generateSummary(initialTransactions),
+  const [stats, setStats] = useState<MeteoraDlmmDownloaderStats>({
+    downloadingComplete: false,
+    positionsComplete: false,
+    transactionDownloadCancelled: false,
+    fullyCancelled: false,
+    secondsElapsed: 0,
+    accountSignatureCount: 0,
+    oldestTransactionDate: new Date(),
+    positionTransactionCount: 0,
+    positionCount: 0,
+    usdPositionCount: 0,
+    missingUsd: 0,
+  });
+  const [allTransactions, setAllTransactions] = useState<
+    MeteoraDlmmDbTransactions[]
+  >([]);
+  const [summary, setSummary] = useState<SummaryData>(generateSummary([]));
+  const [filteredSummary, setFilteredSummary] = useState<SummaryData>(
+    generateSummary([]),
   );
-  const [cancelled, setCancelled] = useState(false);
+  const start = useMemo(() => Date.now(), [router.query.walletAddress]);
   const [initialized, setInitialized] = useState(false);
-  const [filter, setTransactionFilter] = useState(getDefaultFilter());
-  const [displayUsd, setDisplayUsd] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [done, setDone] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
+  const [filter, setFilter] = useState<
+    TransactionFilter | undefined
+  >(undefined);
+  const [quoteTokenDisplay, setQuoteTokenDisplay] = useState<JSX.Element[]>([]);
 
-  function getDefaultFilter(
-    transactions?: MeteoraDlmmDbTransactions[],
-  ): TransactionFilter {
-    transactions = transactions ? transactions : allTransactions;
-
-    return {
-      startDate:
-        transactions.length > 0
-          ? new Date(
-              Math.min(...transactions.map((tx) => tx.block_time * 1000)),
-            )
-          : new Date("11/06/2023"),
-      endDate:
-        transactions.length > 0
-          ? new Date(
-              Math.max(...transactions.map((tx) => tx.block_time * 1000)),
-            )
-          : new Date(Date.now() + 1000 * 60 * 60 * 24),
-      positionStatus: "all",
-      hawksight: "include",
-      baseTokenMints: new Set(transactions.map((tx) => tx.base_mint)),
-      quoteTokenMints: new Set(transactions.map((tx) => tx.quote_mint)),
-    } as TransactionFilter;
-  }
+  const getDefaultFilter = useCallback(
+    (
+      transactions: MeteoraDlmmDbTransactions[] = allTransactions,
+    ): TransactionFilter => {
+      return {
+        startDate:
+          transactions.length > 0
+            ? new Date(
+                Math.min(...transactions.map((tx) => tx.block_time * 1000)),
+              )
+            : new Date("11/06/2023"),
+        endDate:
+          transactions.length > 0
+            ? new Date(
+                Math.max(...transactions.map((tx) => tx.block_time * 1000)),
+              )
+            : new Date(Date.now() + 1000 * 60 * 60 * 24),
+        positionStatus: "all",
+        hawksight: "include",
+        baseTokenMints: new Set(transactions.map((tx) => tx.base_mint)),
+        quoteTokenMints: new Set(transactions.map((tx) => tx.quote_mint)),
+        displayUsd: false,
+      };
+    },
+    [allTransactions],
+  );
 
   const filterTransactions = useCallback(
-    (transactions: MeteoraDlmmDbTransactions[], filter?: TransactionFilter) => {
-      const transactionFilter = filter || getDefaultFilter(transactions);
+    (
+      transactions: MeteoraDlmmDbTransactions[],
+      updatedFilter?: TransactionFilter,
+    ) => {
+      setFilter((prevFilter) => {
+        const newFilter = {
+          ...(prevFilter || getDefaultFilter(transactions)),
+          ...updatedFilter,
+        };
 
-      const filteredTransactions = applyFilter(transactions, transactionFilter);
+        const filteredTransactions = applyFilter(transactions, newFilter);
+        const filteredSummary = generateSummary(filteredTransactions);
 
-      setFilteredSummary(generateSummary(filteredTransactions));
-      setTransactionFilter(transactionFilter);
+        setFilteredSummary(filteredSummary);
+        updateQuoteTokenDisplay(filteredSummary, newFilter.displayUsd);
+
+        return updatedFilter;
+      });
+    },
+    [getDefaultFilter],
+  );
+
+  const updateQuoteTokenDisplay = useCallback(
+    (summary: SummaryData, displayUsd: boolean) => {
+      setQuoteTokenDisplay(
+        Array.from(summary.quote.values()).map((s) => (
+          <QuoteTokenDisplay
+            key={s.token.mint}
+            displayUsd={displayUsd}
+            summary={s}
+          />
+        )),
+      );
     },
     [],
   );
 
-  const readData = useCallback(async (walletAddress: string) => {
-    let loopCount = 0;
-
-    while (!isDone()) {
-      const start = Date.now();
-      const latestTransactions = props.db
-        .getTransactions()
-        .filter((tx) => tx.owner_address == walletAddress);
-
-      setSummary(generateSummary(latestTransactions));
-      setAllTransactions(latestTransactions);
-      filterTransactions(latestTransactions);
-      const dbReadTime = Date.now() - start;
-      const delayMs =
-        loopCount < 2
-          ? 1000
-          : Math.max(1.5 * dbReadTime, Math.min(5000, 3 * dbReadTime));
-
-      console.log(
-        `${dbReadTime}ms database read time, delaying ${delayMs}ms for next database read.`,
-      );
-      await delay(delayMs);
-      loopCount++;
-    }
-    const finalTransactions = props.db
-      .getTransactions()
-      .filter((tx) => tx.owner_address == walletAddress);
-
-    setSummary(generateSummary(finalTransactions));
-    setAllTransactions(finalTransactions);
-    filterTransactions(finalTransactions);
-  }, []);
-
-  function isDone() {
-    return (
-      props.downloader.downloadComplete ||
-      props.downloader.stats.fullyCancelled ||
-      props.downloader.stats.downloadingComplete
-    );
-  }
-
-  function cancel() {
-    props.downloader.cancel();
+  const cancel = useCallback(() => {
+    props.downloadWorker.postMessage("cancel");
     setCancelled(true);
-  }
+  }, [props.downloadWorker]);
 
-  function resetFilters() {
-    filterTransactions(allTransactions, getDefaultFilter());
-  }
+  const resetFilters = useCallback(() => {
+    filterTransactions(allTransactions, undefined);
+  }, [allTransactions, filterTransactions, getDefaultFilter]);
+
+  const update = useCallback(
+    (event: MessageEvent<DataWorkerMessage>) => {
+      if (event.data.stats.downloadingComplete) {
+        setDone(true);
+      }
+      const { transactions, stats } = event.data;
+
+      if (transactions.length > 0) {
+        setStats(stats);
+        setSummary(generateSummary(transactions));
+        setAllTransactions(transactions);
+        if (!initialized) {
+          setInitialized(true);
+          filterTransactions(transactions, getDefaultFilter(transactions));
+        } else {
+          filterTransactions(transactions, filter);
+        }
+      }
+    },
+    [filterTransactions, getDefaultFilter, initialized, filter],
+  );
 
   useEffect(() => {
-    if (router.query.walletAddress && !initialized) {
-      setInitialized(true);
-      readData(router.query.walletAddress as string);
+    if (router.query.walletAddress) {
+      props.downloadWorker.onmessage = update;
+
+      const durationHandle = setInterval(() => {
+        setDuration(Date.now() - start);
+      }, 1000);
+
+      return () => {
+        if (done) {
+          clearInterval(durationHandle);
+        }
+      };
     }
-  }, [initialized, readData]);
+  }, [router.query.walletAddress, props.downloadWorker, start, done, update]);
+
+  if (!initialized) {
+    return <FullPageSpinner excludeLayout={true} />;
+  }
 
   return (
     <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
       <div className="w-full">
         <div className="md:grid grid-flow-cols grid-cols-2 items-start">
           <SummaryTop
-            cancel={() => cancel()}
+            cancel={cancel}
             cancelled={cancelled}
             data={filteredSummary}
-            done={isDone()}
-            downloader={props.downloader}
+            done={done}
+            duration={duration}
+            stats={stats}
           />
           <Filter
             allTransactions={allTransactions}
             data={summary}
-            done={isDone()}
-            filter={filter}
-            filterTransactions={(filter) =>
-              filterTransactions(allTransactions, filter)
+            done={done}
+            filter={filter || getDefaultFilter()}
+            filterTransactions={(newFilter) =>
+              filterTransactions(allTransactions, newFilter)
             }
-            reset={() => resetFilters()}
-            toggleUsd={() => setDisplayUsd(!displayUsd)}
+            reset={resetFilters}
           />
         </div>
-        {Array.from(filteredSummary.quote.values()).map((summary) => (
-          <QuoteTokenDisplay
-            key={summary.token.mint}
-            displayUsd={displayUsd}
-            summary={summary}
-          />
-        ))}
+        {quoteTokenDisplay}
       </div>
     </section>
   );

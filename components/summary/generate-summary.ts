@@ -63,6 +63,7 @@ export interface TransactionFilter {
   hawksight: HawksightStatus;
   baseTokenMints: Set<string>;
   quoteTokenMints: Set<string>;
+  displayUsd: boolean;
 }
 
 export function generateSummary(

@@ -1,5 +1,5 @@
 import { Card, CardBody } from "@nextui-org/react";
-import MeteoraDownloaderStream from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
+import { MeteoraDlmmDownloaderStats } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 
 import { SummaryData } from "@/components/summary/generate-summary";
 import { LoadingItem } from "@/components/loading-status-item";
@@ -7,7 +7,7 @@ import { LoadingItem } from "@/components/loading-status-item";
 export const SummaryLeftComplete = (props: {
   done: boolean;
   data: SummaryData;
-  downloader: MeteoraDownloaderStream;
+  stats: MeteoraDlmmDownloaderStats;
 }) => {
   return (
     <Card>

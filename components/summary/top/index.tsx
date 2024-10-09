@@ -1,4 +1,4 @@
-import MeteoraDownloader from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
+import { MeteoraDlmmDownloaderStats } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 
 import { SummaryData } from "../generate-summary";
 
@@ -6,9 +6,10 @@ import { SummaryLeft } from "@/components/summary/top/left";
 import { SummaryRight } from "@/components/summary/top/right";
 
 export const SummaryTop = (props: {
+  duration: number;
   done: boolean;
   data: SummaryData;
-  downloader: MeteoraDownloader;
+  stats: MeteoraDlmmDownloaderStats;
   cancel: () => any;
   cancelled: boolean;
 }) => {
@@ -18,7 +19,8 @@ export const SummaryTop = (props: {
         <SummaryLeft
           data={props.data}
           done={props.done}
-          downloader={props.downloader}
+          duration={props.duration}
+          stats={props.stats}
         />
       </div>
       <div className="md:ml-4 mb-4">
@@ -27,7 +29,7 @@ export const SummaryTop = (props: {
           cancelled={props.cancelled}
           data={props.data}
           done={props.done}
-          downloader={props.downloader}
+          stats={props.stats}
         />
       </div>
     </>

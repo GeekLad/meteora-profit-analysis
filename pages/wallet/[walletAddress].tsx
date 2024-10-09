@@ -1,7 +1,5 @@
 import { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { MeteoraDlmmDb } from "@geeklad/meteora-dlmm-db/dist";
-import MeteoraDownloader from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 
 import { Summary } from "@/components/summary";
 import { AppState } from "@/pages/_app";
@@ -12,34 +10,37 @@ export default function IndexPage() {
   const appState = useContext(AppState);
   const router = useRouter();
 
-  const [db, setDb] = useState(undefined as undefined | MeteoraDlmmDb);
-  const [downloader, setDownloader] = useState(
-    undefined as undefined | MeteoraDownloader,
+  const [downloadWorker, setDownloadWorker] = useState(
+    undefined as Worker | undefined,
   );
 
   useEffect(() => {
-    if (router.query.walletAddress && (!db || !downloader)) {
+    if (router.query.walletAddress && !downloadWorker) {
       loadTransactions(router.query.walletAddress as string);
     }
   }, [router.query.walletAddress]);
 
   async function loadTransactions(walletAddress: string) {
-    if (!db) {
-      const db = await MeteoraDlmmDb.load();
-      const downloader = db.download(appState.rpc, walletAddress);
+    if (!downloadWorker) {
+      const worker = new Worker(
+        new URL("../../public/workers/download-worker", import.meta.url),
+      );
 
-      setDb(db);
-      setDownloader(downloader);
+      worker.postMessage({
+        rpc: appState.rpc,
+        walletAddress,
+      });
+      setDownloadWorker(worker);
     }
   }
 
-  if (!db || !downloader) {
+  if (!downloadWorker) {
     return <FullPageSpinner />;
   }
 
   return (
     <DefaultLayout>
-      <Summary db={db} downloader={downloader} />
+      <Summary downloadWorker={downloadWorker} />
     </DefaultLayout>
   );
 }

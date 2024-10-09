@@ -21,14 +21,21 @@ export const Filter = (props: {
   filter: TransactionFilter;
   filterTransactions: (filter: TransactionFilter) => any;
   reset: () => any;
-  toggleUsd: () => any;
 }) => {
   const [filterOn, setFilterOn] = useState(false);
 
   return (
     <Card className="md:mb-4 sm:mb-4 md:col-span-2">
       <CardBody className="md:grid grid-flow-cols grid-cols-6">
-        <Switch className="my-4" onClick={() => props.toggleUsd()}>
+        <Switch
+          className="my-4"
+          onClick={() =>
+            props.filterTransactions({
+              ...props.filter,
+              displayUsd: !props.filter.displayUsd,
+            })
+          }
+        >
           Display USD
         </Switch>
         <Switch
