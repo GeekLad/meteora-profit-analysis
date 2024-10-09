@@ -44,9 +44,9 @@ export const Summary = (props: { downloadWorker: Worker }) => {
   const [duration, setDuration] = useState(0);
   const [done, setDone] = useState(false);
   const [cancelled, setCancelled] = useState(false);
-  const [filter, setFilter] = useState<
-    TransactionFilter | undefined
-  >(undefined);
+  const [filter, setFilter] = useState<TransactionFilter | undefined>(
+    undefined,
+  );
   const [quoteTokenDisplay, setQuoteTokenDisplay] = useState<JSX.Element[]>([]);
 
   const getDefaultFilter = useCallback(
@@ -80,12 +80,15 @@ export const Summary = (props: { downloadWorker: Worker }) => {
     (
       transactions: MeteoraDlmmDbTransactions[],
       updatedFilter?: TransactionFilter,
+      reset = false,
     ) => {
       setFilter((prevFilter) => {
-        const newFilter = {
-          ...(prevFilter || getDefaultFilter(transactions)),
-          ...updatedFilter,
-        };
+        const newFilter = !reset
+          ? {
+              ...(prevFilter || getDefaultFilter(transactions)),
+              ...updatedFilter,
+            }
+          : getDefaultFilter();
 
         const filteredTransactions = applyFilter(transactions, newFilter);
         const filteredSummary = generateSummary(filteredTransactions);
@@ -120,7 +123,7 @@ export const Summary = (props: { downloadWorker: Worker }) => {
   }, [props.downloadWorker]);
 
   const resetFilters = useCallback(() => {
-    filterTransactions(allTransactions, undefined);
+    filterTransactions(allTransactions, undefined, true);
   }, [allTransactions, filterTransactions, getDefaultFilter]);
 
   const update = useCallback(
@@ -136,10 +139,8 @@ export const Summary = (props: { downloadWorker: Worker }) => {
         setAllTransactions(transactions);
         if (!initialized) {
           setInitialized(true);
-          filterTransactions(transactions, getDefaultFilter(transactions));
-        } else {
-          filterTransactions(transactions, filter);
         }
+        filterTransactions(transactions, filter);
       }
     },
     [filterTransactions, getDefaultFilter, initialized, filter],
