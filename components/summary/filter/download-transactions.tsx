@@ -21,9 +21,20 @@ export const DownloadCsvButton = (props: {
   const onClick = () => {
     downloadObjArrayAsCsv(
       "transactions.csv",
-      applyFilter(props.allTransactions, props.filter),
+      applyFilter(
+        props.allTransactions.map((tx) => {
+          const date_time =
+            new Date(tx.block_time * 1000).toLocaleDateString() +
+            " " +
+            new Date(tx.block_time * 1000).toLocaleTimeString();
+
+          return { ...tx, date_time };
+        }),
+        props.filter,
+      ),
       [
         "block_time",
+        "date_time",
         "signature",
         "position_address",
         "owner_address",
