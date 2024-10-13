@@ -325,7 +325,10 @@ export function applyFilter(
   return transactions.filter((tx) => {
     if (tx.block_time < transactionFilter.startDate.getTime() / 1000)
       return false;
-    if (tx.block_time > transactionFilter.endDate.getTime() / 1000)
+    if (
+      tx.block_time >
+      transactionFilter.endDate.getTime() / 1000 + 60 * 60 * 24
+    )
       return false;
     if (transactionFilter.positionStatus === "closed" && tx.position_is_open)
       return false;
