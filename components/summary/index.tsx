@@ -126,8 +126,22 @@ export const Summary = (props: { downloadWorker: Worker }) => {
     filterTransactions(allTransactions, undefined, true);
   }, [allTransactions, filterTransactions, getDefaultFilter]);
 
+  function resetDatabase() {
+    props.downloadWorker.postMessage("reset");
+  }
+
   const update = useCallback(
     (event: MessageEvent<DataWorkerMessage>) => {
+      if (typeof event.data == "string") {
+        if (event.data == "reset") {
+          window.location.reload();
+
+          return;
+        }
+        throw new Error(
+          `Received unexpected message "${event.data}" from download worker!`,
+        );
+      }
       if (event.data.stats.downloadingComplete) {
         setDone(true);
       }
@@ -186,7 +200,8 @@ export const Summary = (props: { downloadWorker: Worker }) => {
             filterTransactions={(newFilter) =>
               filterTransactions(allTransactions, newFilter)
             }
-            reset={resetFilters}
+            resetDatabase={resetDatabase}
+            resetFilters={resetFilters}
           />
         </div>
         {quoteTokenDisplay}

@@ -6,6 +6,7 @@ import { PositionStatusDropdown } from "./position-status";
 import { HawksightDropdown } from "./hawksight";
 import { DownloadCsvButton } from "./download-transactions";
 import { DownloadDatabase } from "./download-database";
+import { ResetDatabase } from "./reset-database";
 
 import { PositionDateRangePicker } from "@/components/summary/filter/date-range-picker";
 import { TokenSelector } from "@/components/summary/filter/token-selector";
@@ -20,7 +21,8 @@ export const Filter = (props: {
   done: boolean;
   filter: TransactionFilter;
   filterTransactions: (filter: TransactionFilter) => any;
-  reset: () => any;
+  resetFilters: () => any;
+  resetDatabase: () => any;
 }) => {
   const [filterOn, setFilterOn] = useState(false);
 
@@ -54,14 +56,14 @@ export const Filter = (props: {
           done={props.done}
           filter={props.filter}
         />
-        <span />
+        <ResetDatabase resetDatabase={() => props.resetDatabase()} />
         {filterOn ? (
           <div className="md:flex md:justify-end">
             <Button
               className="w-1/2 my-4"
               color="danger"
               hidden={!filterOn}
-              onClick={() => props.reset()}
+              onClick={() => props.resetFilters()}
             >
               Reset Filters
             </Button>
