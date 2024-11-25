@@ -1,6 +1,6 @@
 {
   "name": "next-pages-template",
-  "version": "3.1.5",
+  "version": "3.1.6",
   "author": {
     "name": "GeekLad"
   },
@@ -13,7 +13,7 @@
     "tokens": "cd services && bun run ./SaveTokenCache.ts"
   },
   "dependencies": {
-    "@geeklad/meteora-dlmm-db": "github:GeekLad/meteora-dlmm-db",
+    "@geeklad/meteora-dlmm-db": "git@github.com:GeekLad/meteora-dlmm-db",
     "@internationalized/date": "^3.5.4",
     "@nextui-org/react": "^2.4.0",
     "@react-aria/visually-hidden": "^3.8.10",
