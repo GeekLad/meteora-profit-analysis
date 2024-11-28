@@ -9,6 +9,7 @@ import {
   getLocalTimeZone,
   parseDate,
 } from "@internationalized/date";
+import { useState } from "react";
 
 export const PositionDateRangePicker = (props: {
   hidden?: boolean;
@@ -50,16 +51,21 @@ export const PositionDateRangePicker = (props: {
     ),
   };
 
+  const [showCalendar, setShowCalendar] = useState(false);
+
   if (props.hidden) {
     return <></>;
   }
 
-  function updateDates(range: RangeValue<CalendarDate>) {
+  function updateDates(range: RangeValue<CalendarDate>, closeCalendar = false) {
     if (range && range.end && range.start) {
       const start = range.start.toDate(getLocalTimeZone());
       const end = range.end.toDate(getLocalTimeZone());
 
       props.onFilter(start, end);
+      if (closeCalendar) {
+        setShowCalendar(false);
+      }
     }
   }
 
@@ -68,24 +74,29 @@ export const PositionDateRangePicker = (props: {
       <DateRangePicker
         CalendarTopContent={
           <ButtonGroup>
-            <Button color="primary" onPress={() => updateDates(today)}>
+            <Button color="primary" onPress={() => updateDates(today, true)}>
               Today
             </Button>
-            <Button color="primary" onPress={() => updateDates(last7Days)}>
+            <Button
+              color="primary"
+              onPress={() => updateDates(last7Days, true)}
+            >
               Last 7 Days
             </Button>
-            <Button color="primary" onPress={() => updateDates(last30Days)}>
+            <Button
+              color="primary"
+              onPress={() => updateDates(last30Days, true)}
+            >
               Last 30 Days
             </Button>
           </ButtonGroup>
         }
         aria-label="Transaction Date Range"
-        calendarProps={{
-          focusedValue: parseDate(props.start.toISOString().substring(0, 10)),
-        }}
+        isOpen={showCalendar}
         label="Transaction Date Range"
         value={dateRange}
         onChange={(range) => updateDates(range)}
+        onOpenChange={(isOpen) => setShowCalendar(isOpen)}
       />
     </div>
   );
