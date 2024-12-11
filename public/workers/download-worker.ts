@@ -74,12 +74,30 @@ self.onmessage = async (event: MessageEvent<string | DataWorkerParameters>) => {
     const { rpc, walletAddress } = event.data;
 
     db = await MeteoraDlmmDb.load();
-    downloader = db.download(rpc, walletAddress, {
-      onDone: async () => {
-        done = true;
-        await db.waitForSave();
-        db.delaySave = true;
-        dbWorker.postMessage(walletAddress);
+    downloader = db.download({
+      endpoint: rpc,
+      account: walletAddress,
+      throttleParameters: {
+        rpc: {
+          max: 1,
+          interval: 1 * 1000,
+        },
+        meteoraDlmm: {
+          max: 18,
+          interval: 3 * 1000,
+        },
+        jupiterTokenList: {
+          max: 8,
+          interval: 30 * 1000,
+        },
+      },
+      callbacks: {
+        onDone: async () => {
+          done = true;
+          await db.waitForSave();
+          db.delaySave = true;
+          dbWorker.postMessage(walletAddress);
+        },
       },
     });
 
