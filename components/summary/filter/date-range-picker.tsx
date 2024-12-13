@@ -95,7 +95,11 @@ export const PositionDateRangePicker = (props: {
         isOpen={showCalendar}
         label="Transaction Date Range"
         value={dateRange}
-        onChange={(range) => updateDates(range)}
+        onChange={(range) => {
+          if (range != null) {
+            updateDates(range);
+          }
+        }}
         onOpenChange={(isOpen) => setShowCalendar(isOpen)}
       />
     </div>
