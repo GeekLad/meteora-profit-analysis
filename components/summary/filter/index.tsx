@@ -43,7 +43,9 @@ export const Filter = (props: {
         <Switch
           className={`my-4${!filterOn ? "col-span-2" : ""}`}
           isSelected={filterOn}
-          onClick={() => setFilterOn(!filterOn)}
+          onClickCapture={() => {
+            setFilterOn((filterOn) => !filterOn);
+          }}
         >
           Display Filters
         </Switch>
@@ -63,7 +65,7 @@ export const Filter = (props: {
               className="w-1/2 my-4"
               color="danger"
               hidden={!filterOn}
-              onClick={() => props.resetFilters()}
+              onPress={() => props.resetFilters()}
             >
               Reset Filters
             </Button>

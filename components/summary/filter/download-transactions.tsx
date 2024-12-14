@@ -18,7 +18,7 @@ export const DownloadCsvButton = (props: {
     return <></>;
   }
 
-  const onClick = () => {
+  const onPress = () => {
     downloadObjArrayAsCsv(
       "transactions.csv",
       applyFilter(
@@ -71,7 +71,7 @@ export const DownloadCsvButton = (props: {
         className="my-4 mr-4"
         color="primary"
         startContent={<DownloadIcon />}
-        onClick={() => onClick()}
+        onPress={() => onPress()}
       >
         Download CSV
       </Button>

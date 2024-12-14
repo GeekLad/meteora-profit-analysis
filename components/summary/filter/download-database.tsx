@@ -20,7 +20,7 @@ export const DownloadDatabase = (props: {
   });
   const table = db.table("db");
 
-  const onClick = async () => {
+  const onPress = async () => {
     const record = await table.get(1);
     const data = record.data;
     const blob = new Blob([data], { type: "application/octet-stream" });
@@ -48,7 +48,7 @@ export const DownloadDatabase = (props: {
         className="my-4 mr-4"
         color="primary"
         startContent={<DownloadIcon />}
-        onClick={() => onClick()}
+        onPress={() => onPress()}
       >
         SQLite DB 🤓
       </Button>

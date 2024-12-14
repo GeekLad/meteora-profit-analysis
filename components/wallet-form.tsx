@@ -28,7 +28,7 @@ export const WalletForm = (props: {
           aria-label="Go"
           color="primary"
           disabled={!props.appState.connection}
-          onClick={() => props.loadTransactions(walletAddress)}
+          onPress={() => props.loadTransactions(walletAddress)}
         >
           Go
         </Button>

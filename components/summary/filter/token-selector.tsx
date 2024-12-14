@@ -75,10 +75,10 @@ export const TokenSelector = (props: {
           onSelectionChange={(keys) => updateTokens(keys)}
         >
           {[
-            <DropdownItem key="all" textValue="all" onClick={() => all()}>
+            <DropdownItem key="all" textValue="all" onPress={() => all()}>
               Select All
             </DropdownItem>,
-            <DropdownItem key="none" textValue="none" onClick={() => clear()}>
+            <DropdownItem key="none" textValue="none" onPress={() => clear()}>
               Select None
             </DropdownItem>,
           ].concat(

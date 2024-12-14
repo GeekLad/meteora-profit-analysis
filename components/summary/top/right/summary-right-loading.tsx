@@ -37,7 +37,7 @@ export const SummaryRightLoading = (props: {
         <Button
           className="w-half mb-4"
           color="danger"
-          onClick={() => {
+          onPress={() => {
             setCancelling(true);
             props.cancel();
           }}
