@@ -1,4 +1,4 @@
-# Meteora DLMM Profit Analysis v3.0
+# Meteora DLMM Profit Analysis v3.2
 
 [![Meteora DLMM Profit Analysis tool screenshot](readme-img/app.png)](https://geeklad.github.io/meteora-profit-analysis/)
 

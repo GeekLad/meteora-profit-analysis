@@ -176,10 +176,12 @@ function summarizeToken(
     transactionCount: 0,
     usdLoadCount: 0,
     deposits: 0,
+    withdraws: 0,
     fees: 0,
     impermanentLoss: 0,
     profit: 0,
     usdDeposits: 0,
+    usdWithdraws: 0,
     usdFees: 0,
     usdImpermanentLoss: 0,
     usdProfit: 0,
@@ -235,10 +237,12 @@ function summarizeToken(
     let {
       transactionCount,
       deposits,
+      withdraws,
       fees,
       impermanentLoss,
       profit,
       usdDeposits,
+      usdWithdraws,
       usdFees,
       usdImpermanentLoss,
       usdProfit,
@@ -254,16 +258,14 @@ function summarizeToken(
     transactionCount++;
 
     deposits = floor(deposits + tx.deposit, tx.quote_decimals);
+    withdraws = floor(withdraws + tx.withdrawal, tx.quote_decimals);
     fees = floor(fees + tx.fee_amount, tx.quote_decimals);
-    impermanentLoss = floor(
-      impermanentLoss + tx.impermanent_loss,
-      tx.quote_decimals,
-    );
-    profit = floor(profit + tx.pnl, tx.quote_decimals);
+    impermanentLoss = floor(withdraws - deposits, tx.quote_decimals);
+    profit = floor(impermanentLoss + fees, tx.quote_decimals);
     usdDeposits = floor(usdDeposits + tx.usd_deposit, 2);
     usdFees = floor(usdFees + tx.usd_fee_amount, 2);
-    usdImpermanentLoss = floor(usdImpermanentLoss + tx.usd_impermanent_loss, 2);
-    usdProfit = floor(usdProfit + tx.usd_pnl, 2);
+    usdImpermanentLoss = floor(usdWithdraws - usdDeposits, 2);
+    usdProfit = floor(usdImpermanentLoss + usdFees, 2);
 
     // Update the main summary with the new cumulative values
     summary = {
@@ -272,29 +274,33 @@ function summarizeToken(
       transactionCount,
       usdLoadCount,
       deposits,
+      withdraws,
       fees,
       impermanentLoss,
       profit,
       usdDeposits,
+      usdWithdraws,
       usdFees,
       usdImpermanentLoss,
       usdProfit,
     };
 
-    // Add the time series data
-    transactionTimeSeries.push({
-      blockTime,
-      date,
-      dateTime,
-      deposits,
-      fees,
-      impermanentLoss,
-      profit,
-      usdDeposits,
-      usdFees,
-      usdImpermanentLoss,
-      usdProfit,
-    });
+    // Add the time series data if it is a close transaction
+    if (tx.is_closing_transaction) {
+      transactionTimeSeries.push({
+        blockTime,
+        date,
+        dateTime,
+        deposits,
+        fees,
+        impermanentLoss,
+        profit,
+        usdDeposits,
+        usdFees,
+        usdImpermanentLoss,
+        usdProfit,
+      });
+    }
   });
 
   if (baseToken) {

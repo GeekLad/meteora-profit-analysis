@@ -2,7 +2,6 @@ import { Button, Card, CardBody, Selection, Switch } from "@nextui-org/react";
 import { useState } from "react";
 import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
 
-import { PositionStatusDropdown } from "./position-status";
 import { HawksightDropdown } from "./hawksight";
 import { DownloadCsvButton } from "./download-transactions";
 import { DownloadDatabase } from "./download-database";
@@ -31,7 +30,8 @@ export const Filter = (props: {
       <CardBody className="md:grid grid-flow-cols grid-cols-6">
         <Switch
           className="my-4"
-          onClick={() =>
+          isSelected={props.filter.displayUsd}
+          onClickCapture={() =>
             props.filterTransactions({
               ...props.filter,
               displayUsd: !props.filter.displayUsd,
@@ -81,16 +81,6 @@ export const Filter = (props: {
           onFilter={(startDate, endDate) => {
             props.filterTransactions({ ...props.filter, startDate, endDate });
           }}
-        />
-        <PositionStatusDropdown
-          hidden={!filterOn}
-          status={props.filter.positionStatus}
-          onFilter={(selectedStatus) =>
-            props.filterTransactions({
-              ...props.filter,
-              positionStatus: selectedStatus,
-            })
-          }
         />
         <HawksightDropdown
           allTransactions={props.allTransactions}

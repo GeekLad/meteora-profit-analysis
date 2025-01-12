@@ -36,7 +36,9 @@ async function readData(walletAddress: string) {
   if (record?.data) {
     const db = new sql.Database(record?.data);
     const statement = db.prepare(`
-      SELECT * FROM v_transactions where owner_address = '${walletAddress}'
+      SELECT * FROM v_transactions where owner_address = '${
+        walletAddress
+      }' and position_is_open = 0
     `);
     while (statement.step())
       transactions.push(statement.getAsObject() as MeteoraDlmmDbTransactions);

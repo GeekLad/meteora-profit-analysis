@@ -83,7 +83,7 @@ self.onmessage = async (event: MessageEvent<string | DataWorkerParameters>) => {
           interval: 1 * 1000,
         },
         meteoraDlmm: {
-          max: 6,
+          max: 4,
           interval: 1 * 1000,
         },
         jupiterTokenList: {

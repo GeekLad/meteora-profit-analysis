@@ -21,7 +21,7 @@ export const Navbar = () => {
           </Link>
           <Link href="/">
             <p className="font-bold text-inherit">
-              Meteora DLMM Profit Analysis v3.0
+              Meteora DLMM Profit Analysis v3.2
             </p>
           </Link>
         </NavbarBrand>
