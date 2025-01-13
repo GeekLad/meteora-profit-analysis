@@ -263,6 +263,7 @@ function summarizeToken(
     impermanentLoss = floor(withdraws - deposits, tx.quote_decimals);
     profit = floor(impermanentLoss + fees, tx.quote_decimals);
     usdDeposits = floor(usdDeposits + tx.usd_deposit, 2);
+    usdWithdraws = floor(usdWithdraws + tx.usd_withdrawal, 2);
     usdFees = floor(usdFees + tx.usd_fee_amount, 2);
     usdImpermanentLoss = floor(usdWithdraws - usdDeposits, 2);
     usdProfit = floor(usdImpermanentLoss + usdFees, 2);
