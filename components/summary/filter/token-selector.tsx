@@ -8,6 +8,7 @@ import {
 } from "@nextui-org/react";
 import { Selection } from "@react-types/shared";
 import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
+import { useState } from "react";
 
 import {
   TransactionFilter,
@@ -23,6 +24,8 @@ export const TokenSelector = (props: {
   baseTokenList: boolean;
   onFilter: (selectedTokens: Selection) => any;
 }) => {
+  const [displayList, setDiplayList] = useState(false);
+
   const tokens: Token[] = applyFilter(
     props.allTransactions,
     props.filter,
@@ -62,7 +65,13 @@ export const TokenSelector = (props: {
 
   return (
     <div className="my-4 mr-4">
-      <Dropdown shouldBlockScroll={false}>
+      <Dropdown
+        isOpen={displayList}
+        shouldBlockScroll={false}
+        onOpenChange={() => {
+          setDiplayList((displayList) => !displayList);
+        }}
+      >
         <DropdownTrigger>
           <Button className="lg:w-2/3">
             {props.baseTokenList ? "Base" : "Quote"} Tokens
