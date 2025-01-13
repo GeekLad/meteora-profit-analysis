@@ -40,6 +40,8 @@ export const DownloadCsvButton = (props: {
         "owner_address",
         "pair_address",
         "is_hawksight",
+        "is_opening_transaction",
+        "is_closing_transaction",
         "position_is_open",
         "base_symbol",
         "quote_symbol",

@@ -26,10 +26,12 @@ interface TransactionSummary extends TransactionData {
   endDate: Date;
 }
 
-interface TransactionTimeSeriesDataPoint extends TransactionData {
+interface TransactionTimeSeriesDataPoint {
   blockTime: number;
   date: string;
   dateTime: string;
+  profit: number;
+  usdProfit: number;
 }
 
 export interface TokenSummary {
@@ -288,17 +290,39 @@ function summarizeToken(
 
     // Add the time series data if it is a close transaction
     if (tx.is_closing_transaction) {
+      let profit = floor(
+        tokenTransactions
+          .filter((t) => t.position_address == tx.position_address)
+          .reduce(
+            (total, t) => total + t.fee_amount + t.withdrawal - t.deposit,
+            0,
+          ),
+        tx.quote_decimals,
+      );
+
+      let usdProfit = floor(
+        tokenTransactions
+          .filter((t) => t.position_address == tx.position_address)
+          .reduce(
+            (total, t) =>
+              total + t.usd_fee_amount + t.usd_withdrawal - t.usd_deposit,
+            0,
+          ),
+        2,
+      );
+
+      if (transactionTimeSeries.length > 0) {
+        profit +=
+          transactionTimeSeries[transactionTimeSeries.length - 1].profit;
+        usdProfit +=
+          transactionTimeSeries[transactionTimeSeries.length - 1].usdProfit;
+      }
+
       transactionTimeSeries.push({
         blockTime,
         date,
         dateTime,
-        deposits,
-        fees,
-        impermanentLoss,
         profit,
-        usdDeposits,
-        usdFees,
-        usdImpermanentLoss,
         usdProfit,
       });
     }
