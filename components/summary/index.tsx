@@ -205,7 +205,7 @@ export const Summary = (props: { downloadWorker: Worker }) => {
           />
         </div>
         {quoteTokenDisplay}
-        <div className="min-h-10" />
+        <div>&nbsp;</div>
       </div>
     </section>
   );
