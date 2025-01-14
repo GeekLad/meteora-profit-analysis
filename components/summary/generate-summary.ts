@@ -215,8 +215,21 @@ function summarizeToken(
   const usdPositions: Set<string> = new Set();
 
   tokenTransactions.forEach((tx) => {
+    let positionCount = positions.size;
+    let usdLoadCount = usdPositions.size;
+
+    // Add the position address for opening positions
+    if (tx.is_opening_transaction) {
+      positions.add(tx.position_address);
+      positionCount = positions.size;
+      if (tx.usd_deposit + tx.usd_withdrawal > 0) {
+        usdPositions.add(tx.position_address);
+      }
+      usdLoadCount = usdPositions.size;
+    }
+
     // Add the base token if we're creating a quote token summary
-    if (!baseTokens.has(tx.base_mint)) {
+    if (!baseTokens.has(tx.base_mint) && positions.has(tx.position_address)) {
       baseTokens.set(tx.base_mint, {
         mint: tx.base_mint,
         symbol: tx.base_symbol,
@@ -225,15 +238,6 @@ function summarizeToken(
       });
     }
 
-    // Add the position address for the position count
-    positions.add(tx.position_address);
-    const positionCount = positions.size;
-
-    // Add for usdPositionCount
-    if (tx.usd_deposit + tx.usd_withdrawal > 0) {
-      usdPositions.add(tx.position_address);
-    }
-    const usdLoadCount = usdPositions.size;
     // Destructure the current summary to increment all the values
     // using the current transaction
     let {
@@ -250,81 +254,84 @@ function summarizeToken(
       usdProfit,
     } = summary;
 
-    // Get the timestamp data
-    const { block_time: blockTime } = tx;
-    const date = new Date(blockTime * 1000).toLocaleDateString();
-    const dateTime =
-      date + " " + new Date(blockTime * 1000).toLocaleTimeString();
+    // Update if we have the position (i.e. grabbed the opening transaction)
+    if (positions.has(tx.position_address)) {
+      // Get the timestamp data
+      const { block_time: blockTime } = tx;
+      const date = new Date(blockTime * 1000).toLocaleDateString();
+      const dateTime =
+        date + " " + new Date(blockTime * 1000).toLocaleTimeString();
 
-    // Update all the cumulative values
-    transactionCount++;
+      // Update all the cumulative values
+      transactionCount++;
 
-    deposits = floor(deposits + tx.deposit, tx.quote_decimals);
-    withdraws = floor(withdraws + tx.withdrawal, tx.quote_decimals);
-    fees = floor(fees + tx.fee_amount, tx.quote_decimals);
-    impermanentLoss = floor(withdraws - deposits, tx.quote_decimals);
-    profit = floor(impermanentLoss + fees, tx.quote_decimals);
-    usdDeposits = floor(usdDeposits + tx.usd_deposit, 2);
-    usdWithdraws = floor(usdWithdraws + tx.usd_withdrawal, 2);
-    usdFees = floor(usdFees + tx.usd_fee_amount, 2);
-    usdImpermanentLoss = floor(usdWithdraws - usdDeposits, 2);
-    usdProfit = floor(usdImpermanentLoss + usdFees, 2);
+      deposits = floor(deposits + tx.deposit, tx.quote_decimals);
+      withdraws = floor(withdraws + tx.withdrawal, tx.quote_decimals);
+      fees = floor(fees + tx.fee_amount, tx.quote_decimals);
+      impermanentLoss = floor(withdraws - deposits, tx.quote_decimals);
+      profit = floor(impermanentLoss + fees, tx.quote_decimals);
+      usdDeposits = floor(usdDeposits + tx.usd_deposit, 2);
+      usdWithdraws = floor(usdWithdraws + tx.usd_withdrawal, 2);
+      usdFees = floor(usdFees + tx.usd_fee_amount, 2);
+      usdImpermanentLoss = floor(usdWithdraws - usdDeposits, 2);
+      usdProfit = floor(usdImpermanentLoss + usdFees, 2);
 
-    // Update the main summary with the new cumulative values
-    summary = {
-      ...summary,
-      positionCount,
-      transactionCount,
-      usdLoadCount,
-      deposits,
-      withdraws,
-      fees,
-      impermanentLoss,
-      profit,
-      usdDeposits,
-      usdWithdraws,
-      usdFees,
-      usdImpermanentLoss,
-      usdProfit,
-    };
-
-    // Add the time series data if it is a close transaction
-    if (tx.is_closing_transaction) {
-      let profit = floor(
-        tokenTransactions
-          .filter((t) => t.position_address == tx.position_address)
-          .reduce(
-            (total, t) => total + t.fee_amount + t.withdrawal - t.deposit,
-            0,
-          ),
-        tx.quote_decimals,
-      );
-
-      let usdProfit = floor(
-        tokenTransactions
-          .filter((t) => t.position_address == tx.position_address)
-          .reduce(
-            (total, t) =>
-              total + t.usd_fee_amount + t.usd_withdrawal - t.usd_deposit,
-            0,
-          ),
-        2,
-      );
-
-      if (transactionTimeSeries.length > 0) {
-        profit +=
-          transactionTimeSeries[transactionTimeSeries.length - 1].profit;
-        usdProfit +=
-          transactionTimeSeries[transactionTimeSeries.length - 1].usdProfit;
-      }
-
-      transactionTimeSeries.push({
-        blockTime,
-        date,
-        dateTime,
+      // Update the main summary with the new cumulative values
+      summary = {
+        ...summary,
+        positionCount,
+        transactionCount,
+        usdLoadCount,
+        deposits,
+        withdraws,
+        fees,
+        impermanentLoss,
         profit,
+        usdDeposits,
+        usdWithdraws,
+        usdFees,
+        usdImpermanentLoss,
         usdProfit,
-      });
+      };
+
+      // Add the time series data if it is a close transaction
+      if (tx.is_closing_transaction) {
+        let profit = floor(
+          tokenTransactions
+            .filter((t) => t.position_address == tx.position_address)
+            .reduce(
+              (total, t) => total + t.fee_amount + t.withdrawal - t.deposit,
+              0,
+            ),
+          tx.quote_decimals,
+        );
+
+        let usdProfit = floor(
+          tokenTransactions
+            .filter((t) => t.position_address == tx.position_address)
+            .reduce(
+              (total, t) =>
+                total + t.usd_fee_amount + t.usd_withdrawal - t.usd_deposit,
+              0,
+            ),
+          2,
+        );
+
+        if (transactionTimeSeries.length > 0) {
+          profit +=
+            transactionTimeSeries[transactionTimeSeries.length - 1].profit;
+          usdProfit +=
+            transactionTimeSeries[transactionTimeSeries.length - 1].usdProfit;
+        }
+
+        transactionTimeSeries.push({
+          blockTime,
+          date,
+          dateTime,
+          profit,
+          usdProfit,
+        });
+      }
     }
   });
 
