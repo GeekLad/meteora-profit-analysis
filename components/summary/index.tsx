@@ -205,9 +205,7 @@ export const Summary = (props: { downloadWorker: Worker }) => {
           />
         </div>
         {quoteTokenDisplay}
-        {filter?.baseTokenMints?.size && filter?.baseTokenMints?.size >= 10 ? (
-          <div className="min-h-1" />
-        ) : null}
+        <div className="min-h-10" />
       </div>
     </section>
   );
