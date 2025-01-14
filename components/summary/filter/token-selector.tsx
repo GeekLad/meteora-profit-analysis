@@ -40,7 +40,7 @@ export const TokenSelector = (props: {
       };
     })
     // Alphabetize
-    .sort((a, b) => a.symbol.localeCompare(b.symbol))
+    .sort((a, b) => (a.symbol ? a.symbol.localeCompare(b.symbol) : 1))
     // Remove dupes
     .filter(
       (token, index, array) =>
