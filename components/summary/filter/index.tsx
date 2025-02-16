@@ -99,6 +99,7 @@ export const Filter = (props: {
           filter={props.filter}
           hidden={!filterOn}
           selectedItems={props.filter.quoteTokenMints}
+          showTextFilter={false}
           onFilter={(selectedTokens: Selection) =>
             props.filterTransactions({
               ...props.filter,
@@ -112,6 +113,7 @@ export const Filter = (props: {
           filter={props.filter}
           hidden={!filterOn}
           selectedItems={props.filter.baseTokenMints}
+          showTextFilter={true}
           onFilter={(selectedTokens: Selection) =>
             props.filterTransactions({
               ...props.filter,

@@ -1,10 +1,12 @@
 import {
   Button,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
   Image,
+  Input,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  Listbox,
+  ListboxItem,
 } from "@nextui-org/react";
 import { Selection } from "@react-types/shared";
 import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
@@ -23,8 +25,10 @@ export const TokenSelector = (props: {
   selectedItems: Selection;
   baseTokenList: boolean;
   onFilter: (selectedTokens: Selection) => any;
+  showTextFilter: boolean;
 }) => {
   const [displayList, setDiplayList] = useState(false);
+  const [textFilter, setTextFilter] = useState("");
 
   const tokens: Token[] = applyFilter(
     props.allTransactions,
@@ -41,11 +45,22 @@ export const TokenSelector = (props: {
     })
     // Alphabetize
     .sort((a, b) => (a.symbol ? a.symbol.localeCompare(b.symbol) : 1))
-    // Remove dupes
-    .filter(
-      (token, index, array) =>
-        array.indexOf(array.find((t) => t.mint == token.mint)!) == index,
-    );
+    // Remove dupes and apply text filter when set
+    .filter((token, index, array) => {
+      const notDupe =
+        array.indexOf(array.find((t) => t.mint == token.mint)!) == index;
+
+      if (textFilter) {
+        const matchesMint = token.mint === textFilter;
+        const matchesSymbol = token.symbol
+          .toLowerCase()
+          .includes(textFilter.toLowerCase());
+
+        return notDupe && (matchesMint || matchesSymbol);
+      }
+
+      return notDupe;
+    });
 
   if (props.hidden) {
     return <></>;
@@ -65,47 +80,71 @@ export const TokenSelector = (props: {
 
   return (
     <div className="my-4 mr-4">
-      <Dropdown
+      <Popover
         isOpen={displayList}
+        placement="bottom"
         shouldBlockScroll={false}
+        shouldCloseOnScroll={false}
         onOpenChange={() => {
           setDiplayList((displayList) => !displayList);
+          setTextFilter("");
         }}
       >
-        <DropdownTrigger>
+        <PopoverTrigger>
           <Button className="lg:w-2/3">
             {props.baseTokenList ? "Base" : "Quote"} Tokens
           </Button>
-        </DropdownTrigger>
-        <DropdownMenu
-          closeOnSelect={false}
-          selectedKeys={props.selectedItems}
-          selectionMode="multiple"
-          onSelectionChange={(keys) => updateTokens(keys)}
-        >
-          {[
-            <DropdownItem key="all" textValue="all" onPress={() => all()}>
-              Select All
-            </DropdownItem>,
-            <DropdownItem key="none" textValue="none" onPress={() => clear()}>
-              Select None
-            </DropdownItem>,
-          ].concat(
-            tokens.map((token) => {
-              return (
-                <DropdownItem
-                  key={token.mint}
-                  startContent={<Image src={token.logo} width="20" />}
-                  textValue={token.mint}
-                  value={token.mint}
-                >
-                  {token.symbol}
-                </DropdownItem>
-              );
-            }),
+        </PopoverTrigger>
+        <PopoverContent className="min-w-[200px] max-h-[350px] px-1">
+          {props.showTextFilter && (
+            <div className="p-1">
+              <Input
+                placeholder="Enter name or CA"
+                value={textFilter}
+                onValueChange={setTextFilter}
+              />
+            </div>
           )}
-        </DropdownMenu>
-      </Dropdown>
+          <Listbox
+            className="overflow-auto"
+            selectedKeys={props.selectedItems}
+            selectionMode="multiple"
+            onSelectionChange={(keys) => updateTokens(keys)}
+          >
+            {[
+              <ListboxItem
+                key="all"
+                hideSelectedIcon={true}
+                textValue="all"
+                onPress={() => all()}
+              >
+                Select All
+              </ListboxItem>,
+              <ListboxItem
+                key="none"
+                hideSelectedIcon={true}
+                textValue="none"
+                onPress={() => clear()}
+              >
+                Select None
+              </ListboxItem>,
+            ].concat(
+              tokens.map((token) => {
+                return (
+                  <ListboxItem
+                    key={token.mint}
+                    startContent={<Image src={token.logo} width="20" />}
+                    textValue={token.mint}
+                    value={token.mint}
+                  >
+                    {token.symbol}
+                  </ListboxItem>
+                );
+              }),
+            )}
+          </Listbox>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };
