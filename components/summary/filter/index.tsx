@@ -1,5 +1,10 @@
-import { Button, Card, CardBody, Selection, Switch } from "@nextui-org/react";
-import { useState } from "react";
+"use client";
+
+import { Button } from "@heroui/button";
+import { Card, CardBody } from "@heroui/card";
+import { Switch } from "@heroui/switch";
+import { Selection } from "@react-types/shared";
+import { useState, useEffect } from "react";
 import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
 
 import { HawksightDropdown } from "./hawksight";
@@ -26,7 +31,7 @@ export const Filter = (props: {
   const [filterOn, setFilterOn] = useState(false);
 
   return (
-    <Card className="md:mb-4 sm:mb-4 md:col-span-2">
+    <Card className="mb-4 md:col-span-2">
       <CardBody className="md:grid grid-flow-cols grid-cols-6">
         <Switch
           className="my-4"
@@ -60,16 +65,14 @@ export const Filter = (props: {
         />
         <ResetDatabase resetDatabase={() => props.resetDatabase()} />
         {filterOn ? (
-          <div className="md:flex md:justify-end">
-            <Button
-              className="w-1/2 my-4"
-              color="danger"
-              hidden={!filterOn}
-              onPress={() => props.resetFilters()}
-            >
-              Reset Filters
-            </Button>
-          </div>
+          <Button
+            className="my-4"
+            color="danger"
+            hidden={!filterOn}
+            onPress={() => props.resetFilters()}
+          >
+            Reset Filters
+          </Button>
         ) : (
           <span />
         )}

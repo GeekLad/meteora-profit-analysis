@@ -1,4 +1,6 @@
-import { Button, Card, CardBody } from "@nextui-org/react";
+"use client";
+import { Button } from "@heroui/button";
+import { Card, CardBody } from "@heroui/card";
 import { MeteoraDlmmDownloaderStats } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 import { useState } from "react";
 

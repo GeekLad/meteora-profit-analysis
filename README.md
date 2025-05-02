@@ -1,4 +1,4 @@
-# Meteora DLMM Profit Analysis v3.3
+# Meteora DLMM Profit Analysis v3.4
 
 [![Meteora DLMM Profit Analysis tool screenshot](readme-img/app.png)](https://geeklad.github.io/meteora-profit-analysis/)
 
@@ -87,7 +87,7 @@ really want to.
 
 - [Meteora DLMM Datbase]()
 - [Next.js 14](https://nextjs.org/docs/getting-started)
-- [NextUI](https://nextui.org)
+- [HeroUI](https://heroui.org)
 - [Tailwind CSS](https://tailwindcss.com)
 - [Tailwind Variants](https://tailwind-variants.org)
 - [TypeScript](https://www.typescriptlang.org)

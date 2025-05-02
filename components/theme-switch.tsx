@@ -1,7 +1,10 @@
-import { FC, useState, useEffect } from "react";
+"use client";
+
+import { FC } from "react";
 import { VisuallyHidden } from "@react-aria/visually-hidden";
-import { SwitchProps, useSwitch } from "@nextui-org/react";
+import { SwitchProps, useSwitch } from "@heroui/switch";
 import { useTheme } from "next-themes";
+import { useIsSSR } from "@react-aria/ssr";
 import clsx from "clsx";
 
 import { SunFilledIcon, MoonFilledIcon } from "@/components/icons";
@@ -15,9 +18,8 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
   className,
   classNames,
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
-
   const { theme, setTheme } = useTheme();
+  const isSSR = useIsSSR();
 
   const onChange = () => {
     theme === "light" ? setTheme("dark") : setTheme("light");
@@ -31,16 +33,10 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
     getInputProps,
     getWrapperProps,
   } = useSwitch({
-    isSelected: theme === "light",
+    isSelected: theme === "light" || isSSR,
+    "aria-label": `Switch to ${theme === "light" || isSSR ? "dark" : "light"} mode`,
     onChange,
   });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, [isMounted]);
-
-  // Prevent Hydration Mismatch
-  if (!isMounted) return <div className="w-6 h-6" />;
 
   return (
     <Component
@@ -48,7 +44,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
         className: clsx(
           "px-px transition-opacity hover:opacity-80 cursor-pointer",
           className,
-          classNames?.base,
+          classNames?.base
         ),
       })}
     >
@@ -70,11 +66,11 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
               "px-0",
               "mx-0",
             ],
-            classNames?.wrapper,
+            classNames?.wrapper
           ),
         })}
       >
-        {isSelected ? (
+        {!isSelected || isSSR ? (
           <MoonFilledIcon size={22} />
         ) : (
           <SunFilledIcon size={22} />

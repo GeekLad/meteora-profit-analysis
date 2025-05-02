@@ -1,10 +1,10 @@
 import {
   Dropdown,
   DropdownTrigger,
-  Button,
   DropdownMenu,
   DropdownItem,
-} from "@nextui-org/react";
+} from "@heroui/dropdown";
+import { Button } from "@heroui/button";
 import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
 
 import { HawksightStatus } from "@/components/summary/generate-summary";
@@ -24,12 +24,13 @@ export const HawksightDropdown = (props: {
   }
 
   return (
-    <div className="my-4 mr-4">
+    <div className="my-4 md:mr-4">
       <Dropdown shouldBlockScroll={false}>
         <DropdownTrigger>
           <Button className="lg:w-2/3">HawkFi</Button>
         </DropdownTrigger>
         <DropdownMenu
+          aria-label="Dropdown menu with description"
           closeOnSelect={false}
           selectedKeys={[props.status]}
           selectionMode="single"

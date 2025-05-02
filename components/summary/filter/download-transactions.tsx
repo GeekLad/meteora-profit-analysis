@@ -1,4 +1,5 @@
-import { Button, Tooltip } from "@nextui-org/react";
+import { Button } from "@heroui/button";
+import { Tooltip } from "@heroui/tooltip";
 import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
 
 import { DownloadIcon } from "@/components/icons";
@@ -30,7 +31,7 @@ export const DownloadCsvButton = (props: {
 
           return { ...tx, date_time };
         }),
-        props.filter,
+        props.filter
       ),
       [
         "block_time",
@@ -58,7 +59,7 @@ export const DownloadCsvButton = (props: {
         "usd_pnl",
         "impermanent_loss",
         "pnl",
-      ],
+      ]
     );
   };
 
@@ -70,7 +71,7 @@ export const DownloadCsvButton = (props: {
     >
       <Button
         aria-label="Download CSV"
-        className="my-4 mr-4"
+        className="my-4 md:mr-4"
         color="primary"
         startContent={<DownloadIcon />}
         onPress={() => onPress()}

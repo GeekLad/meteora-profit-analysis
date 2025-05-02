@@ -1,6 +1,4 @@
-import { Spinner } from "@nextui-org/react";
-
-import DefaultLayout from "@/layouts/default";
+import { Spinner } from "@heroui/spinner";
 
 export const FullPageSpinner = (props: { excludeLayout?: boolean }) => {
   if (props.excludeLayout) {
@@ -12,10 +10,10 @@ export const FullPageSpinner = (props: { excludeLayout?: boolean }) => {
   }
 
   return (
-    <DefaultLayout>
+    <section>
       <div className="flex h-full w-full justify-center items-center">
         <Spinner size="lg" />
       </div>
-    </DefaultLayout>
+    </section>
   );
 };
