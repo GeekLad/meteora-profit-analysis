@@ -1,11 +1,8 @@
-import {
-  Button,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalHeader,
-  useDisclosure,
-} from "@nextui-org/react";
+"use client";
+import { useDisclosure } from "@nextui-org/react";
+
+import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
+import { Button } from "@heroui/button";
 import { useState } from "react";
 
 export const ResetDatabase = (props: {
@@ -29,7 +26,7 @@ export const ResetDatabase = (props: {
     <>
       <Button
         aria-label="Reset Database"
-        className="my-4 mr-4"
+        className="my-4 md:mr-4"
         color="warning"
         onPress={onOpen}
       >
@@ -58,7 +55,7 @@ export const ResetDatabase = (props: {
                 <p>
                   <Button
                     aria-label="Cancel"
-                    className={!resetting ? "my-4 mr-4" : "hidden"}
+                    className={!resetting ? "my-4 md:mr-4" : "hidden"}
                     isDisabled={resetting}
                     onPress={onClose}
                   >
@@ -66,7 +63,7 @@ export const ResetDatabase = (props: {
                   </Button>
                   <Button
                     aria-label="⚠ Reset Database"
-                    className="my-4 mr-4"
+                    className="my-4 md:mr-4"
                     color="warning"
                     isDisabled={resetting}
                     isLoading={resetting}

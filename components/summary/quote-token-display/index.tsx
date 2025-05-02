@@ -1,4 +1,5 @@
-import { Card, CardBody, Image } from "@nextui-org/react";
+import { Card, CardBody } from "@heroui/card";
+import Image from "next/image";
 
 import { QuoteTokenStats } from "@/components/summary/quote-token-display/quote-token-stats";
 import { QuoteTokenSummary } from "@/components/summary/generate-summary";
@@ -18,8 +19,13 @@ export const QuoteTokenDisplay = (props: {
       <CardBody className="sm:p-0">
         <div className="md:grid grid-flow-row grid-cols-5 m-4">
           <div>
-            <div className="flex columns-2 mb-4 items-center">
-              <Image src={props.summary.token.logo} width="50" />
+            <div className="flex columns-2  items-center">
+              <Image
+                height="50"
+                alt="token_logo"
+                src={props.summary.token.logo}
+                width="50"
+              />
               <div className="ml-4 font-bold">{props.summary.token.symbol}</div>
             </div>
             <QuoteTokenStats

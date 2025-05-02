@@ -1,4 +1,4 @@
-import { Card, CardBody } from "@nextui-org/react";
+import { Card, CardBody } from "@heroui/card";
 import { MeteoraDlmmDownloaderStats } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 
 import { LoadingItem } from "@/components/loading-status-item";
@@ -26,7 +26,7 @@ export const SummaryRightComplete = (props: {
               {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
-              },
+              }
             )}
           />
           <LoadingItem
@@ -39,7 +39,7 @@ export const SummaryRightComplete = (props: {
                 currency: "USD",
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
-              },
+              }
             )}
           />
           <LoadingItem
@@ -52,7 +52,7 @@ export const SummaryRightComplete = (props: {
                 currency: "USD",
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
-              },
+              }
             )}
           />
           <LoadingItem
@@ -65,7 +65,7 @@ export const SummaryRightComplete = (props: {
                 currency: "USD",
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
-              },
+              }
             )}
           />
         </CardBody>

@@ -1,16 +1,13 @@
-import {
-  Button,
-  Image,
-  Input,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  Listbox,
-  ListboxItem,
-} from "@nextui-org/react";
+"use client";
+
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
+import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
+import { Listbox, ListboxItem } from "@heroui/listbox";
+import Image from "next/image";
 import { Selection } from "@react-types/shared";
 import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   TransactionFilter,
@@ -33,7 +30,7 @@ export const TokenSelector = (props: {
   const tokens: Token[] = applyFilter(
     props.allTransactions,
     props.filter,
-    false,
+    false
   )
     .map((tx) => {
       return {
@@ -79,7 +76,7 @@ export const TokenSelector = (props: {
   }
 
   return (
-    <div className="my-4 mr-4">
+    <div className="my-4 md:mr-4">
       <Popover
         isOpen={displayList}
         placement="bottom"
@@ -91,7 +88,7 @@ export const TokenSelector = (props: {
         }}
       >
         <PopoverTrigger>
-          <Button className="lg:w-2/3">
+          <Button className="w-full">
             {props.baseTokenList ? "Base" : "Quote"} Tokens
           </Button>
         </PopoverTrigger>
@@ -99,14 +96,18 @@ export const TokenSelector = (props: {
           {props.showTextFilter && (
             <div className="p-1">
               <Input
+                aria-label="name-or-ca-input"
                 placeholder="Enter name or CA"
+                type="text"
                 value={textFilter}
                 onValueChange={setTextFilter}
               />
             </div>
           )}
           <Listbox
+            aria-label="Listbox menu with sections"
             className="overflow-auto"
+            label="listbox-a"
             selectedKeys={props.selectedItems}
             selectionMode="multiple"
             onSelectionChange={(keys) => updateTokens(keys)}
@@ -133,14 +134,21 @@ export const TokenSelector = (props: {
                 return (
                   <ListboxItem
                     key={token.mint}
-                    startContent={<Image src={token.logo} width="20" />}
+                    startContent={
+                      <Image
+                        alt="start"
+                        height="20"
+                        src={token.logo}
+                        width="20"
+                      />
+                    }
                     textValue={token.mint}
                     value={token.mint}
                   >
                     {token.symbol}
                   </ListboxItem>
                 );
-              }),
+              })
             )}
           </Listbox>
         </PopoverContent>

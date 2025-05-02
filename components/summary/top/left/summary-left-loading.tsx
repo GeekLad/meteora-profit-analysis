@@ -1,4 +1,5 @@
-import { Card, CardBody, Progress } from "@nextui-org/react";
+import { Card, CardBody } from "@heroui/card";
+import { Progress } from "@heroui/progress";
 import { MeteoraDlmmDownloaderStats } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-downloader";
 
 import { SummaryData } from "@/components/summary/generate-summary";

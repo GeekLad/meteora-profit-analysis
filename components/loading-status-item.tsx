@@ -1,4 +1,4 @@
-import { Spinner } from "@nextui-org/react";
+import { Spinner } from "@heroui/spinner";
 
 export const LoadingItem = (props: {
   title: string;
@@ -33,7 +33,7 @@ export const LoadingItem = (props: {
               {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
-              },
+              }
             )
           : props.value}
       </div>

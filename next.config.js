@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  output: 'standalone',
   productionBrowserSourceMaps: true,
+  images: {
+    remotePatterns: [{
+      protocol: "https",
+      hostname: "*", // Allow images from all domains
+    },]
+  },
   webpack: (config) => {
     config.resolve.fallback = {
       fs: false,

@@ -1,10 +1,9 @@
-import { Input } from "@nextui-org/react";
-import { useContext } from "react";
+import { Input } from "@heroui/input";
 
-import { AppState } from "@/pages/_app";
+import { useAppStateContext } from "@/app/providers";
 
 export const RpcInput = () => {
-  const { rpc, connection, updateRpc } = useContext(AppState);
+  const { rpc, connection, updateRpc } = useAppStateContext();
 
   return (
     <Input

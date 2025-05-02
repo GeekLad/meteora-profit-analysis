@@ -1,4 +1,5 @@
-import { Button, Tooltip } from "@nextui-org/react";
+import { Button } from "@heroui/button";
+import { Tooltip } from "@heroui/tooltip";
 import { MeteoraDlmmDbTransactions } from "@geeklad/meteora-dlmm-db/dist/meteora-dlmm-db";
 import { Dexie } from "dexie";
 
@@ -45,7 +46,7 @@ export const DownloadDatabase = (props: {
     >
       <Button
         aria-label="Download CSV"
-        className="my-4 mr-4"
+        className="my-4 md:mr-4"
         color="primary"
         startContent={<DownloadIcon />}
         onPress={() => onPress()}

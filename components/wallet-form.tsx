@@ -1,7 +1,8 @@
-import { Button, Input } from "@nextui-org/react";
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
 import { useState } from "react";
 
-import { AppStateInterface } from "@/pages/_app";
+import { AppStateInterface } from "@/app/providers";
 
 export const WalletForm = (props: {
   appState: AppStateInterface;
