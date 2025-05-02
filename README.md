@@ -87,7 +87,7 @@ really want to.
 
 - [Meteora DLMM Datbase]()
 - [Next.js 14](https://nextjs.org/docs/getting-started)
-- [NextUI](https://nextui.org)
+- [HeroUI](https://heroui.org)
 - [Tailwind CSS](https://tailwindcss.com)
 - [Tailwind Variants](https://tailwind-variants.org)
 - [TypeScript](https://www.typescriptlang.org)
