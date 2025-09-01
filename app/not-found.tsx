@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 import { FullPageSpinner } from "@/components/full-page-spinner";
 import { title } from "@/components/primitives";
@@ -9,15 +9,25 @@ export default function Custom404() {
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-  const validPath = router.asPath.match(/\/wallet\/.*/);
+  const pathname = usePathname();
+  const validPath = pathname.match(/\/wallet\/.*/);
+
+  const searchParams = useSearchParams();
+
+  // Combine pathname and searchParams to replicate asPath behavior
+  const currentPath = searchParams.toString()
+    ? `${pathname}?${searchParams.toString()}`
+    : pathname;
+  console.log(currentPath);
+  console.log(pathname);
 
   useEffect(() => {
     if (validPath) {
-      router.push(router.asPath);
+      router.push(pathname);
     } else {
       setLoading(false);
     }
-  }, [router.asPath]);
+  }, [pathname]);
 
   if (loading || validPath) {
     return <FullPageSpinner />;

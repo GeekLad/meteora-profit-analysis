@@ -26,11 +26,9 @@ self.onmessage = async (event: MessageEvent<string | DataWorkerParameters>) => {
   let done = false;
   let start: number;
   let dbReadTime = 0;
-
   const dbWorker = new Worker(
     new URL("../../public/workers/data-worker", import.meta.url),
   );
-
   dbWorker.onmessage = async (
     event: MessageEvent<string | MeteoraDlmmDbTransactions[]>,
   ) => {
@@ -71,6 +69,7 @@ self.onmessage = async (event: MessageEvent<string | DataWorkerParameters>) => {
         );
     }
   } else {
+    
     const { rpc, walletAddress } = event.data;
 
     db = await MeteoraDlmmDb.load();

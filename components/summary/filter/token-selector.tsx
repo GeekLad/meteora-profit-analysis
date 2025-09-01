@@ -143,7 +143,6 @@ export const TokenSelector = (props: {
                       />
                     }
                     textValue={token.mint}
-                    value={token.mint}
                   >
                     {token.symbol}
                   </ListboxItem>

@@ -24,29 +24,29 @@ import { useAppStateContext } from "@/app/providers";
 export const Navbar = () => {
   const { rpc, connection, updateRpc } = useAppStateContext();
 
-  const rpcInput = (
-    <Input
-      aria-label="RPC"
-      classNames={{
-        inputWrapper: "bg-default-100",
-        input: "text-sm",
-      }}
-      endContent={
-        <Kbd className="hidden lg:inline-block" keys={["command"]}>
-          K
-        </Kbd>
-      }
-      isInvalid={connection == undefined}
-      labelPlacement="outside"
-      placeholder="RPC..."
-      startContent={
-        <GlobeIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
-      }
-      type="text"
-      value={rpc}
-      onChange={(event) => updateRpc(event.target.value)}
-    />
-  );
+  // const rpcInput = (
+  //   <Input
+  //     aria-label="RPC"
+  //     classNames={{
+  //       inputWrapper: "bg-default-100",
+  //       input: "text-sm",
+  //     }}
+  //     endContent={
+  //       <Kbd className="hidden lg:inline-block" keys={["command"]}>
+  //         K
+  //       </Kbd>
+  //     }
+  //     isInvalid={connection == undefined}
+  //     labelPlacement="outside"
+  //     placeholder="RPC..."
+  //     startContent={
+  //       <GlobeIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
+  //     }
+  //     type="text"
+  //     value={rpc}
+  //     onChange={(event) => updateRpc(event.target.value)}
+  //   />
+  // );
 
   return (
     <HeroUINavbar className="mb-2 md:mb-8" maxWidth="xl" position="sticky">

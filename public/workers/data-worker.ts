@@ -20,7 +20,7 @@ async function init() {
     table = db.table("db");
     sql = await initSqlJs({
       locateFile: (file) =>
-        `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/${file}`,
+`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.13.0/${file}`,
     });
   }
 }
