@@ -21,7 +21,7 @@ export const Navbar = () => {
           </Link>
           <Link href="/">
             <p className="font-bold text-inherit">
-              Meteora DLMM Profit Analysis v3.4
+              Meteora DLMM Profit Analysis v3.4.1
             </p>
           </Link>
         </NavbarBrand>
@@ -31,7 +31,7 @@ export const Navbar = () => {
         className="hidden sm:flex basis-1/5 sm:basis-full"
         justify="end"
       >
-        <NavbarItem className="md:m-4 hidden sm:flex gap-2">
+        <NavbarItem className="w-full md:m-4 hidden sm:flex gap-2">
           <RpcInput />
           <ThemeSwitch />
         </NavbarItem>

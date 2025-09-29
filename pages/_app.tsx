@@ -9,7 +9,7 @@ import { Connection } from "@solana/web3.js";
 import { fontSans, fontMono } from "@/config/fonts";
 import "@/styles/globals.css";
 
-const RPC_URL = "https://grateful-jerrie-fast-mainnet.helius-rpc.com";
+const RPC_URL = "https://meteora-jupiter-32e6.mainnet.rpcpool.com";
 
 export interface AppStateInterface {
   rpc: string;
